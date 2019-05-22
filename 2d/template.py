@@ -1,5 +1,5 @@
 """
-Wave_runup
+dambreak 2-D
 """
 from __future__ import division
 from past.utils import old_div
@@ -10,122 +10,76 @@ from proteus.mprans.SpatialTools import Tank2D
 from proteus.mprans import SpatialTools as st
 import proteus.TwoPhaseFlow.TwoPhaseFlowProblem as TpFlow
 from proteus.Gauges import PointGauges, LineIntegralGauges, LineGauges
-from proteus import WaveTools as wt
-from proteus.ctransportCoefficients import smoothedHeaviside
-import math
+
 # *************************** #
 # ***** GENERAL OPTIONS ***** #
 # *************************** #
 opts= Context.Options([
-    ("final_time",10.0,"Final time for simulation"),
+    ("final_time",3.0,"Final time for simulation"),
     ("dt_output",0.01,"Time interval to output solution"),
     ("cfl",0.25,"Desired CFL restriction"),
-    ("he",0.1,"he relative to Length of domain in x"),
-    ("refinement",3,"level of refinement"),
-#    ("toe",35.0,"where toe begins from origin (m from x)"),
-    ("slope",(1/19.85),"Beta, slope of incline (y/x)"),
-    ("slope_length",50.0,"right extent of domain x(m)"),
-    ("wl",1.0,"water level"),
-    ("waves",True, "wave on/off"),
-    ("wave_height", 0.28, "Height of the waves in s"),
-    ("wave_dir", (1.,0.,0.), "Direction of the waves (from left boundary)"),
-    ("wave_type", 'solitaryWave', "type of wave"),
-    ("fast", False, "switch for fast cosh calculations in WaveTools"),
-    ("g", [0, -9.81, 0], "Gravity vector in m/s^2"),
-
+    ("he",0.01,"he relative to Length of domain in x"),
+    ("refinement",3,"level of refinement")
     ])
 
 
-toe=(-opts.wl/opts.slope)+35#shifted
-structured=False
-slope=opts.slope
-slope_x=opts.slope_length-toe
-slope_y=slope*slope_x
-top=(slope_y)*1.35
-#toe=opts.toe
-he=opts.he
-nnx=nny=nnz=None
-wl=opts.wl
-a=opts.wave_height
-
-k=((3*a)/(4*(opts.wl**3)))**0.5
-L=(2/k)*np.arccosh(0.05**(-0.5))
-x0=(-opts.wl/opts.slope)-(L/2)+35 #shifted
-
-if opts.waves is True:
-    height = opts.wave_height
-    mwl = depth = opts.wl
-    direction = opts.wave_dir
-    wave = wt.SolitaryWave(	waveHeight = height, 
-				mwl = wl, 
-				depth = depth,
-               			g = np.array(opts.g), 
-				waveDir = direction,
-				trans = np.array([x0, 0., 0.]),
-                       		fast = opts.fast
-			  )
 # ****************** #
 # ***** GAUGES ***** #
 # ****************** #
+height_gauges1 = LineGauges(gauges=((("phi",),
+                                        (((2.724, 0.0, 0.0),
+                                          (2.724, 1.8, 0.0)), # We consider this one in our paper
+                                         ((2.228, 0.0, 0.0),
+                                          (2.228, 1.8, 0.0)), # We consider this one in our paper
+                                         ((1.732, 0.0, 0.0),
+                                          (1.732, 1.8, 0.0)),
+                                         ((0.582, 0.0, 0.0),
+	                                  (0.582, 1.8, 0.0)))),),
+                                        fileName="height1.csv")
+
+height_gauges2 = LineGauges(gauges=((("phi",),
+                                     (((0.0, 0.0, 0.0),
+                                       (0.0, 0.0, -0.01)),
+                                      ((0.0, 0.0, 0.0),
+                                        (3.22, 0.0, 0.0)))),),
+                            fileName="height2.csv")
+
+pressure_gauges = PointGauges(gauges=((('p',),
+                                      ((3.22, 0.16, 0.0), #P1                                                               
+                                       (3.22, 0.584, 0.0), #P3                                                               
+                                       (3.22, 0.12, 0.0))),), # This is the one considered in our paper
+                                       fileName="pressure.csv")
+
 
 # *************************** #
 # ***** DOMAIN AND MESH ***** #
 # ****************** #******* #
-domain = Domain.PlanarStraightLineGraphDomain()
-nLevels = 1
- 
-#parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
-nLayersOfOverlapForParallel = 0
+tank_dim = (3.22,1.8) 
+refinement = opts.refinement
+structured=False
+if structured:
+    nny = 5*(2**refinement)+1
+    nnx = 2*(nnx-1)+1
+    domain = Domain.RectangularDomain(tank_dim)
+    boundaryTags = domain.boundaryTags
+    triangleFlag=1
+else:
+    nnx = nny = None
+    domain = Domain.PlanarStraightLineGraphDomain()
 
-boundaries=['left','right','bottom','slope','top']
-boundaryOrientations = {'bottom': np.array([0., -1.,0.]),
-                        'right': np.array([+1., 0.,0.]),
-                        'top': np.array([0., +1.,0.]),
-                        'left': np.array([-1., 0.,0.]),
-                        'slope': np.array([-1., 0.,0.]),}
+# ----- TANK ----- #
+tank = Tank2D(domain, tank_dim) 
 
-boundaryTags=dict([(key,i+1) for (i,key) in enumerate(boundaries)])
+# ----- EXTRA BOUNDARY CONDITIONS ----- #
+tank.BC['y+'].setAtmosphere()
+tank.BC['y-'].setFreeSlip()
+tank.BC['x+'].setFreeSlip()
+tank.BC['x-'].setFreeSlip()
 
-vertices=[[0.0,0.0],#0                                                           
-          [toe,0.0],#1                                                                        
-          [opts.slope_length,slope_y],#2                                    
-          [opts.slope_length,top],#3  
-#         [toe+slope_x,top],#3                             
-          [0.0,top]]#4
-
-vertexFlags=[boundaryTags['left'],
-             boundaryTags['bottom'],
-             boundaryTags['slope'],
-             boundaryTags['right'],
-             boundaryTags['top']]
-
-segments=[[0,1],
-          [1,2],
-          [2,3],
-          [3,4],
-          [4,0]]
- 
-segmentFlags=[boundaryTags['bottom'],
-              boundaryTags['slope'],
-              boundaryTags['right'],
-              boundaryTags['top'],
-              boundaryTags['left']]
-
-regions=[[0.1, 0.01]]
-
-regionFlags=[1]
-
-tank = st.CustomShape(domain, vertices=vertices, vertexFlags=vertexFlags,
-                      segments=segments, segmentFlags=segmentFlags,
-                      regions=regions, regionFlags=regionFlags,
-                      boundaryTags=boundaryTags, boundaryOrientations=boundaryOrientations)
-
-
-##############################
-
-#domain
-
-#############################
+he = tank_dim[0]*opts.he
+domain.MeshOptions.he = he
+st.assembleDomain(domain)
+domain.MeshOptions.triangleOptions = "VApq30Dena%8.8f" % (old_div((he ** 2), 2.0),)
 
 # ****************************** #
 # ***** INITIAL CONDITIONS ***** #
@@ -134,64 +88,55 @@ class zero(object):
     def uOfXT(self,x,t):
         return 0.0
 
+waterLine_y = 0.6
+waterLine_x = 1.2
 class clsvof_init_cond(object):
     def uOfXT(self,x,t):
-#        return x[1]-wl
-        return x[1] - (wave.eta(x,0) + opts.wl)    
-        # if x[0] < waterLine_x and x[1] < waterLine_y: 
-        #     return -1.0
-        # elif x[0] > waterLine_x or x[1] > waterLine_y: 
-        #     return 1.0
-        # else:
-        #     return 0.0        
+        if x[0] < waterLine_x and x[1] < waterLine_y: 
+            return -1.0
+        elif x[0] > waterLine_x or x[1] > waterLine_y: 
+            return 1.0
+        else:
+            return 0.0        
 
-epsFact_consrv_heaviside=3.0
-wavec =  np.sqrt(9.81 * (depth+opts.wave_height))
-def weight(x,t):
-    return 1.0-smoothedHeaviside(epsFact_consrv_heaviside*opts.he,
-                                 #-ct.epsFact_consrv_heaviside*ct.opts.he+
-                                 (x[1] - (max(wave.eta(x, t%(toe/wavec)),
-                                 wave.eta(x+toe, t%(toe/wavec)))
-                                             +opts.wl)))
+
+class VF_IC:
+    def uOfXT(self, x, t):
+        if x[0] < waterLine_x and x[1] < waterLine_y:
+            return 0.0
+        else:
+            return 1.0
+
+class PHI_IC:
+    def uOfXT(self, x, t):
+        phi_x = x[0] - waterLine_x
+        phi_y = x[1] - waterLine_y
+        if phi_x < 0.0:
+            if phi_y < 0.0:
+                return max(phi_x, phi_y)
+            else:
+                return phi_y
+        else:
+            if phi_y < 0.0:
+                return phi_x
+            else:
+                return (phi_x ** 2 + phi_y ** 2)**0.5
 
         
-class vel_u(object):
-    def uOfXT(self, x, t):
-        if x[1] <= wave.eta(x,t) + opts.wl:
-            return weight(x,t)*wave.u(x,t)[0]
-        else:
-            return 0.0
-
-class vel_v(object):
-    def uOfXT(self, x, t):
-        if x[1] <= wave.eta(x,t) + opts.wl:
-            return weight(x,t)*wave.u(x,t)[1]
-        else:
-            return 0.0
-# ****************************** #
-# ***** Boundary CONDITIONS***** #
-# ****************************** #                                                                  
-
-tank.BC['top'].setAtmosphere()
-tank.BC['bottom'].setFreeSlip()
-tank.BC['left'].setFreeSlip()
-tank.BC['right'].setFreeSlip()
-tank.BC['slope'].setFreeSlip()
-
-he = opts.he
-domain.MeshOptions.he = he
-st.assembleDomain(domain)
-domain.MeshOptions.triangleOptions = "VApq30Dena%8.8f" % (old_div((he ** 2), 2.0),)
-
+        
 ############################################
 # ***** Create myTwoPhaseFlowProblem ***** #
 ############################################
 outputStepping = TpFlow.OutputStepping(opts.final_time,dt_output=opts.dt_output)
 initialConditions = {'pressure': zero(),
                      'pressure_increment': zero(),
-                     'vel_u': vel_u(),
-                     'vel_v': vel_v(),
+                     'vel_u': zero(),
+                     'vel_v': zero(),
+                     'vof': VF_IC(),
+                     'ncls': PHI_IC(),
+                     'rdls': PHI_IC(),
                      'clsvof': clsvof_init_cond()}
+
 
 boundaryConditions = {
     # DIRICHLET BCs #
@@ -215,10 +160,11 @@ boundaryConditions = {
     'vel_w_DFBC': lambda x, flag: domain.bc[flag].w_diffusive.init_cython(),
     'clsvof_DFBC': lambda x, flag: None}
 
-# auxVariables={'clsvof': [height_gauges],
-#               'pressure': [pressure_gauges]}
+auxVariables={'clsvof': [height_gauges1, height_gauges2],
+              'pressure': [pressure_gauges]}
 
-myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=1,
+myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=0,
+                                             ls_model=0,
                                              nd=2,
                                              cfl=opts.cfl,
                                              outputStepping=outputStepping,
@@ -229,8 +175,8 @@ myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=1,
                                              nnz=None,
                                              domain=domain,
                                              initialConditions=initialConditions,
-                                             boundaryConditions=boundaryConditions,
-#                                             auxVariables=auxVariables,
+                                             boundaryConditions=None,#boundaryConditions,
+                                             auxVariables=auxVariables,
                                              useSuperlu=False)
 physical_parameters = myTpFlowProblem.physical_parameters
-myTpFlowProblem.clsvof_parameters['disc_ICs']=False
+myTpFlowProblem.clsvof_parameters['disc_ICs']=True

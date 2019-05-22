@@ -1,5 +1,5 @@
 """
-danbreak 2-D
+dambreak 2-D
 """
 from __future__ import division
 from past.utils import old_div
@@ -21,6 +21,7 @@ opts= Context.Options([
     ("he",0.01,"he relative to Length of domain in x"),
     ("refinement",3,"level of refinement")
     ])
+
 
 # ****************** #
 # ***** GAUGES ***** #
@@ -98,6 +99,31 @@ class clsvof_init_cond(object):
         else:
             return 0.0        
 
+
+class VF_IC:
+    def uOfXT(self, x, t):
+        if x[0] < waterLine_x and x[1] < waterLine_y:
+            return 0.0
+        else:
+            return 1.0
+
+class PHI_IC:
+    def uOfXT(self, x, t):
+        phi_x = x[0] - waterLine_x
+        phi_y = x[1] - waterLine_y
+        if phi_x < 0.0:
+            if phi_y < 0.0:
+                return max(phi_x, phi_y)
+            else:
+                return phi_y
+        else:
+            if phi_y < 0.0:
+                return phi_x
+            else:
+                return (phi_x ** 2 + phi_y ** 2)**0.5
+
+        
+        
 ############################################
 # ***** Create myTwoPhaseFlowProblem ***** #
 ############################################
@@ -106,7 +132,12 @@ initialConditions = {'pressure': zero(),
                      'pressure_increment': zero(),
                      'vel_u': zero(),
                      'vel_v': zero(),
+                     'vof': VF_IC(),
+                     'ncls': PHI_IC(),
+                     'rdls': PHI_IC(),
                      'clsvof': clsvof_init_cond()}
+
+
 boundaryConditions = {
     # DIRICHLET BCs #
     'pressure_DBC': lambda x, flag: domain.bc[flag].p_dirichlet.init_cython(),
@@ -132,7 +163,8 @@ boundaryConditions = {
 auxVariables={'clsvof': [height_gauges1, height_gauges2],
               'pressure': [pressure_gauges]}
 
-myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=1,
+myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=0,
+                                             ls_model=0,
                                              nd=2,
                                              cfl=opts.cfl,
                                              outputStepping=outputStepping,
@@ -143,7 +175,7 @@ myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=1,
                                              nnz=None,
                                              domain=domain,
                                              initialConditions=initialConditions,
-                                             boundaryConditions=boundaryConditions,
+                                             boundaryConditions=None,#boundaryConditions,
                                              auxVariables=auxVariables,
                                              useSuperlu=False)
 physical_parameters = myTpFlowProblem.physical_parameters
