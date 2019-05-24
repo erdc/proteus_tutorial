@@ -54,32 +54,61 @@ pressure_gauges = PointGauges(gauges=((('p',),
 # *************************** #
 # ***** DOMAIN AND MESH ***** #
 # ****************** #******* #
-tank_dim = (3.22,1.8) 
-refinement = opts.refinement
-structured=False
-if structured:
-    nny = 5*(2**refinement)+1
-    nnx = 2*(nnx-1)+1
-    domain = Domain.RectangularDomain(tank_dim)
-    boundaryTags = domain.boundaryTags
-    triangleFlag=1
-else:
-    nnx = nny = None
-    domain = Domain.PlanarStraightLineGraphDomain()
+boundaries=['inflow','outflow','bottom','top']
+boundaryTags=dict([(key,i+1) for (i,key) in enumerate(boundaries)])
 
-# ----- TANK ----- #
-tank = Tank2D(domain, tank_dim) 
+vertices=[[0.0,0.0],#0                                                
+          [3.22,0.],#1                                          
+	  [3.22,1.8],#2
+          [0., 1.8]]#3
 
-# ----- EXTRA BOUNDARY CONDITIONS ----- #
-tank.BC['y+'].setAtmosphere()
-tank.BC['y-'].setFreeSlip()
-tank.BC['x+'].setFreeSlip()
-tank.BC['x-'].setFreeSlip()
 
-he = tank_dim[0]*opts.he
-domain.MeshOptions.he = he
-st.assembleDomain(domain)
-domain.MeshOptions.triangleOptions = "VApq30Dena%8.8f" % (old_div((he ** 2), 2.0),)
+vertexFlags=[boundaryTags['inflow'],
+             boundaryTags['bottom'],
+             boundaryTags['outflow'],
+             boundaryTags['top']]
+
+segments=[[0,1],
+          [1,2],
+          [2,3],
+          [3,0]]
+
+
+
+segmentFlags=[boundaryTags['bottom'],
+              boundaryTags['outflow'],
+              boundaryTags['top'],
+              boundaryTags['inflow']]
+
+
+regx=(vertices[1][0]+vertices[0][0])/2
+regy=(vertices[-1][1]+vertices[0][1])/2
+regions=[[regx, regy]]
+regionFlags=[1]
+
+domain = Domain.PlanarStraightLineGraphDomain(vertices=vertices,
+                                              vertexFlags=vertexFlags,
+                                              segments=segments,
+                                              segmentFlags=segmentFlags,
+                                              regions = regions,
+                                              regionFlags = regionFlags,)
+#                                              regionConstraints=regionConstraints)
+#                                             holes=holes)                                        
+
+he = opts.he                                                                                       
+
+domain.MeshOptions.setParallelPartitioningType('node')
+domain.boundaryTags = boundaryTags
+#domain.readPoly("mesh")                                                                            
+domain.writePoly("mesh")
+domain.writePLY("mesh")
+domain.writeAsymptote("mesh")
+triangleOptions = "VApq30Dena%8.8f" % ((he**2)/2.0,)                                               
+logEvent("""Mesh generated using: tetgen -%s %s"""  % (triangleOptions,domain.polyfile+".poly"))
+#proteus.MeshTools.                                                                                 
+domain.MeshOptions.triangleOptions=triangleOptions
+
+
 
 # ****************************** #
 # ***** INITIAL CONDITIONS ***** #
@@ -90,15 +119,6 @@ class zero(object):
 
 waterLine_y = 0.6
 waterLine_x = 1.2
-class clsvof_init_cond(object):
-    def uOfXT(self,x,t):
-        if x[0] < waterLine_x and x[1] < waterLine_y: 
-            return -1.0
-        elif x[0] > waterLine_x or x[1] > waterLine_y: 
-            return 1.0
-        else:
-            return 0.0        
-
 
 class VF_IC:
     def uOfXT(self, x, t):
@@ -123,7 +143,92 @@ class PHI_IC:
                 return (phi_x ** 2 + phi_y ** 2)**0.5
 
         
-        
+# ******************************* #                                                                  
+# ***** BOUNDARY CONDITIONS ***** #                                                                  
+# ******************************* #                                                                  
+non_slip_BCs=True
+openTop=True
+# DIRICHLET BOUNDARY CONDITIONS #                                                                    
+def vel_u_DBC(x,flag):
+    return None
+def vel_v_DBC(x,flag):
+    return None
+def vel_w_DBC(x,flag):
+    return None
+
+def pressure_increment_DBC(x,flag):
+    if flag == boundaryTags['top'] and openTop:
+        return lambda x,t: 0.0
+
+def pressure_DBC(x,flag):
+    if flag == boundaryTags['top'] and openTop:
+        return lambda x,t: 0.0
+
+def clsvof_DBC(x,flag):
+    if openTop and flag == boundaryTags['top']:
+        return lambda x,t: 1.0
+
+def vof_DBC(x,flag):
+    if openTop and flag == boundaryTags['top']:
+        return lambda x,t: 1.0
+
+def ncls_DBC(x,flag):
+    return None
+
+def rdls_DBC(x, flag):
+    pass
+
+
+# ADVECTIVE FLUX BOUNDARY CONDITIONS #                                                              
+def vel_u_AFBC(x,flag):
+    if openTop and flag == boundaryTags['top']:
+        return None
+    else: #slip everywhere but the box                                                              
+        return lambda x,t: 0.0
+
+def vel_v_AFBC(x,flag):
+    if openTop and flag == boundaryTags['top']:
+        return None
+    else: #slip everywhere but the box                                                              
+        return lambda x,t: 0.0
+
+def vel_w_AFBC(x,flag):
+    if openTop and flag == boundaryTags['top']:
+        return None
+    else: #slip everywhere but the box                                                              
+        return lambda x,t: 0.0
+
+def pressure_increment_AFBC(x,flag):
+    if not (flag == boundaryTags['top'] and openTop):
+        return lambda x,t: 0.0
+
+def pressure_AFBC(x,flag):
+    if not(flag == boundaryTags['top'] and openTop):
+        return lambda x,t: 0.0
+
+def clsvof_AFBC(x,flag):
+    if openTop and flag == boundaryTags['top']:
+        return None
+    else:
+        return lambda x,t: 0.0
+
+def vof_AFBC(x,flag):
+    if openTop and flag == boundaryTags['top']:
+        return None
+    else:
+        return lambda x,t: 0.0
+
+def ncls_AFBC(x,flag):
+    return None
+
+def rdls_AFBC(x,flag):
+    return None
+
+# DIFFUSIVE FLUX BCs #                                                                               
+def pressure_increment_DFBC(x,flag):
+    if not (flag == boundaryTags['top'] and openTop):
+	return lambda x,t: 0.0
+            
 ############################################
 # ***** Create myTwoPhaseFlowProblem ***** #
 ############################################
@@ -134,49 +239,55 @@ initialConditions = {'pressure': zero(),
                      'vel_v': zero(),
                      'vof': VF_IC(),
                      'ncls': PHI_IC(),
-                     'rdls': PHI_IC(),
-                     'clsvof': clsvof_init_cond()}
-
+                     'rdls': PHI_IC()}
 
 boundaryConditions = {
-    # DIRICHLET BCs #
-    'pressure_DBC': lambda x, flag: domain.bc[flag].p_dirichlet.init_cython(),
-    'pressure_increment_DBC': lambda x, flag: domain.bc[flag].pInc_dirichlet.init_cython(),
-    'vel_u_DBC': lambda x, flag: domain.bc[flag].u_dirichlet.init_cython(),
-    'vel_v_DBC': lambda x, flag: domain.bc[flag].v_dirichlet.init_cython(),
-    'vel_w_DBC': lambda x, flag: domain.bc[flag].w_dirichlet.init_cython(),
-    'clsvof_DBC': lambda x, flag: domain.bc[flag].vof_dirichlet.init_cython(),
-    # ADVECTIVE FLUX BCs #
-    'pressure_AFBC': lambda x, flag: domain.bc[flag].p_advective.init_cython(),
-    'pressure_increment_AFBC': lambda x, flag: domain.bc[flag].pInc_advective.init_cython(),
-    'vel_u_AFBC': lambda x, flag: domain.bc[flag].u_advective.init_cython(),
-    'vel_v_AFBC': lambda x, flag: domain.bc[flag].v_advective.init_cython(),
-    'vel_w_AFBC': lambda x, flag: domain.bc[flag].w_advective.init_cython(),
-    'clsvof_AFBC': lambda x, flag: domain.bc[flag].vof_advective.init_cython(),
-    # DIFFUSIVE FLUX BCs #
-    'pressure_increment_DFBC': lambda x, flag: domain.bc[flag].pInc_diffusive.init_cython(),
-    'vel_u_DFBC': lambda x, flag: domain.bc[flag].u_diffusive.init_cython(),
-    'vel_v_DFBC': lambda x, flag: domain.bc[flag].v_diffusive.init_cython(),
-    'vel_w_DFBC': lambda x, flag: domain.bc[flag].w_diffusive.init_cython(),
+    # DIRICHLET BCs #                                                                                
+    'pressure_DBC': pressure_DBC,
+    'pressure_increment_DBC':  pressure_increment_DBC,
+    'vel_u_DBC': vel_u_DBC,
+    'vel_v_DBC': vel_v_DBC,
+#    'vel_w_DBC': vel_w_DBC,
+    'vof_DBC': vof_DBC,
+    'ncls_DBC': ncls_DBC,
+    'rdls_DBC':rdls_DBC,
+    'clsvof_DBC': clsvof_DBC,
+    # ADVECTIVE FLUX BCs #                                                                           
+    'pressure_AFBC': pressure_AFBC,
+    'pressure_increment_AFBC': pressure_increment_AFBC,
+    'vel_u_AFBC': vel_u_AFBC,
+    'vel_v_AFBC': vel_v_AFBC,
+#    'vel_w_AFBC': vel_w_AFBC,
+    'vof_AFBC': vof_AFBC,
+    'ncls_AFBC': ncls_AFBC,
+    'rdls_AFBC': rdls_AFBC,
+    'clsvof_AFBC': clsvof_AFBC,
+    # DIFFUSIVE FLUX BCs #                                                                           
+    'pressure_increment_DFBC': pressure_increment_DFBC,
+    'vel_u_DFBC': lambda x, flag: lambda x,t: 0.,
+    'vel_v_DFBC': lambda x, flag: lambda x,t: 0.,
+#    'vel_w_DFBC': lambda x, flag: lambda x,t: 0.,
+    'vof_DFBC': lambda x, flag: None,
+    'ncls_DFBC': lambda x, flag: None,
+    'rdls_DFBC': lambda x, flag: None,
     'clsvof_DFBC': lambda x, flag: None}
 
-auxVariables={'clsvof': [height_gauges1, height_gauges2],
-              'pressure': [pressure_gauges]}
+#auxVariables={'clsvof': [height_gauges1, height_gauges2],
+#              'pressure': [pressure_gauges]}
 
 myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=0,
                                              ls_model=0,
                                              nd=2,
                                              cfl=opts.cfl,
                                              outputStepping=outputStepping,
-                                             structured=structured,
                                              he=he,
-                                             nnx=nnx,
-                                             nny=nny,
-                                             nnz=None,
+#                                             nnx=nnx,
+#                                             nny=nny,
+#                                             nnz=None,
                                              domain=domain,
                                              initialConditions=initialConditions,
-                                             boundaryConditions=None,#boundaryConditions,
-                                             auxVariables=auxVariables,
+                                             boundaryConditions=boundaryConditions,
+#                                             auxVariables=auxVariables,
                                              useSuperlu=False)
 physical_parameters = myTpFlowProblem.physical_parameters
-myTpFlowProblem.clsvof_parameters['disc_ICs']=True
+myTpFlowProblem.clsvof_parameters['disc_ICs']=False
