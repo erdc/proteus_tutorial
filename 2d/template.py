@@ -264,9 +264,9 @@ boundaryConditions = {
     'clsvof_AFBC': clsvof_AFBC,
     # DIFFUSIVE FLUX BCs #                                                                           
     'pressure_increment_DFBC': pressure_increment_DFBC,
-    'vel_u_DFBC': lambda x, flag: lambda x,t: 0.,
-    'vel_v_DFBC': lambda x, flag: lambda x,t: 0.,
-#    'vel_w_DFBC': lambda x, flag: lambda x,t: 0.,
+    'vel_u_DFBC': lambda x, flag: lambda x,t: 0.0,
+    'vel_v_DFBC': lambda x, flag: lambda x,t: 0.0,
+#    'vel_w_DFBC': lambda x, flag: lambda x,t: 0.0,
     'vof_DFBC': lambda x, flag: None,
     'ncls_DFBC': lambda x, flag: None,
     'rdls_DFBC': lambda x, flag: None,
