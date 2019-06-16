@@ -1,5 +1,5 @@
 """
-dambreak 2-D
+Stepped spillway
 """
 from __future__ import division
 from past.utils import old_div
@@ -10,7 +10,7 @@ from proteus.mprans.SpatialTools import Tank2D
 from proteus.mprans import SpatialTools as st
 import proteus.TwoPhaseFlow.TwoPhaseFlowProblem as TpFlow
 from proteus.ctransportCoefficients import smoothedHeaviside, smoothedHeaviside_integral
-import ss_geom as ssg
+import stepped_spillway_geom as ssg
 #from proteus.Gauges import PointGauges, LineIntegralGauges, LineGauges
 
 # *************************** #
@@ -82,7 +82,7 @@ tailwater=opts.tailwater
 boundaries=['bottom','outflow','top','inflow']
 boundaryTags=dict([(key,i+1) for (i,key) in enumerate(boundaries)])
 
-vertices=np.genfromtxt("domain.csv", delimiter=",").tolist()
+vertices=np.genfromtxt("stepped_spillway_domain.csv", delimiter=",").tolist()
 vertices=ssg.ups_len(vertices,opts.upstream_length)
 vertices=ssg.dwns_len(vertices,opts.downstream_length)
 vertices=ssg.top(vertices,opts.top)
