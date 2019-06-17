@@ -5,7 +5,7 @@
 
 
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from proteus import SpatialTools as st
 import os
 from proteus import Domain
@@ -46,10 +46,10 @@ def clipus(vrts):
             newl.append(vrts[i])
     return newl
 
-def plots(fig):
-    plt.figure(figsize=(40,10))
-    plt.scatter(np.array(fig)[:,0],np.array(fig)[:,1])
-    plt.show()
+#def plots(fig):
+#    plt.figure(figsize=(40,10))
+#    plt.scatter(np.array(fig)[:,0],np.array(fig)[:,1])
+#    plt.show()
 
 def v_flags(vertices,boundaryTags):
     vertexFlags=[]
