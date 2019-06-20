@@ -13,4 +13,3 @@ RUN rm -rf /home/$NB_USER/stack/.git
 RUN rm -rf /home/$NB_USER/air-water-vv/.git
 RUN rm -rf /home/$NB_USER/.cache
 RUN git clone http://github.com/erdc/training_proteus
-RUN git clone http://github.com/erdc/air-water-vv
