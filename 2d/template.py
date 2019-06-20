@@ -28,13 +28,13 @@ opts= Context.Options([
 # ****************** #
 height_gauges1 = LineGauges(gauges=((("phi",),
                                         (((2.724, 0.0, 0.0),
-                                          (2.724, 1.8, 0.0)), # We consider this one in our paper
+                                          (2.724, 1.8, 0.0)),
                                          ((2.228, 0.0, 0.0),
-                                          (2.228, 1.8, 0.0)), # We consider this one in our paper
+                                          (2.228, 1.8, 0.0)),
                                          ((1.732, 0.0, 0.0),
                                           (1.732, 1.8, 0.0)),
                                          ((0.582, 0.0, 0.0),
-	                                  (0.582, 1.8, 0.0)))),),
+                                          (0.582, 1.8, 0.0)))),),
                                         fileName="height1.csv")
 
 height_gauges2 = LineGauges(gauges=((("phi",),
@@ -47,7 +47,7 @@ height_gauges2 = LineGauges(gauges=((("phi",),
 pressure_gauges = PointGauges(gauges=((('p',),
                                       ((3.22, 0.16, 0.0), #P1                                                               
                                        (3.22, 0.584, 0.0), #P3                                                               
-                                       (3.22, 0.12, 0.0))),), # This is the one considered in our paper
+                                       (3.22, 0.12, 0.0))),),
                                        fileName="pressure.csv")
 
 
@@ -59,7 +59,7 @@ boundaryTags=dict([(key,i+1) for (i,key) in enumerate(boundaries)])
 
 vertices=[[0.0,0.0],#0                                                
           [3.22,0.],#1                                          
-	  [3.22,1.8],#2
+          [3.22,1.8],#2
           [0., 1.8]]#3
 
 
@@ -105,7 +105,6 @@ domain.writePLY("mesh")
 domain.writeAsymptote("mesh")
 triangleOptions = "VApq30Dena%8.8f" % ((he**2)/2.0,)                                               
 logEvent("""Mesh generated using: tetgen -%s %s"""  % (triangleOptions,domain.polyfile+".poly"))
-#proteus.MeshTools.                                                                                 
 domain.MeshOptions.triangleOptions=triangleOptions
 
 
@@ -142,7 +141,7 @@ class PHI_IC:
             else:
                 return (phi_x ** 2 + phi_y ** 2)**0.5
 
-        
+
 # ******************************* #                                                                  
 # ***** BOUNDARY CONDITIONS ***** #                                                                  
 # ******************************* #                                                                  
@@ -183,19 +182,19 @@ def rdls_DBC(x, flag):
 def vel_u_AFBC(x,flag):
     if openTop and flag == boundaryTags['top']:
         return None
-    else: #slip everywhere but the box                                                              
+    else: #slip                                                              
         return lambda x,t: 0.0
 
 def vel_v_AFBC(x,flag):
     if openTop and flag == boundaryTags['top']:
         return None
-    else: #slip everywhere but the box                                                              
+    else: #slip                                                              
         return lambda x,t: 0.0
 
 def vel_w_AFBC(x,flag):
     if openTop and flag == boundaryTags['top']:
         return None
-    else: #slip everywhere but the box                                                              
+    else: #slip                                                             
         return lambda x,t: 0.0
 
 def pressure_increment_AFBC(x,flag):
@@ -227,8 +226,8 @@ def rdls_AFBC(x,flag):
 # DIFFUSIVE FLUX BCs #                                                                               
 def pressure_increment_DFBC(x,flag):
     if not (flag == boundaryTags['top'] and openTop):
-	return lambda x,t: 0.0
-            
+        return lambda x,t: 0.0
+
 ############################################
 # ***** Create myTwoPhaseFlowProblem ***** #
 ############################################
@@ -244,33 +243,34 @@ initialConditions = {'pressure': zero(),
 boundaryConditions = {
     # DIRICHLET BCs #                                                                                
     'pressure_DBC': pressure_DBC,
-    'pressure_increment_DBC':  pressure_increment_DBC,
+#    'pressure_increment_DBC':  pressure_increment_DBC,
     'vel_u_DBC': vel_u_DBC,
     'vel_v_DBC': vel_v_DBC,
 #    'vel_w_DBC': vel_w_DBC,
     'vof_DBC': vof_DBC,
     'ncls_DBC': ncls_DBC,
     'rdls_DBC':rdls_DBC,
-    'clsvof_DBC': clsvof_DBC,
+#    'clsvof_DBC': clsvof_DBC,
     # ADVECTIVE FLUX BCs #                                                                           
     'pressure_AFBC': pressure_AFBC,
-    'pressure_increment_AFBC': pressure_increment_AFBC,
+#    'pressure_increment_AFBC': pressure_increment_AFBC,
     'vel_u_AFBC': vel_u_AFBC,
     'vel_v_AFBC': vel_v_AFBC,
 #    'vel_w_AFBC': vel_w_AFBC,
     'vof_AFBC': vof_AFBC,
     'ncls_AFBC': ncls_AFBC,
     'rdls_AFBC': rdls_AFBC,
-    'clsvof_AFBC': clsvof_AFBC,
+#    'clsvof_AFBC': clsvof_AFBC,
     # DIFFUSIVE FLUX BCs #                                                                           
-    'pressure_increment_DFBC': pressure_increment_DFBC,
+#    'pressure_increment_DFBC': pressure_increment_DFBC,
     'vel_u_DFBC': lambda x, flag: lambda x,t: 0.0,
     'vel_v_DFBC': lambda x, flag: lambda x,t: 0.0,
 #    'vel_w_DFBC': lambda x, flag: lambda x,t: 0.0,
     'vof_DFBC': lambda x, flag: None,
     'ncls_DFBC': lambda x, flag: None,
     'rdls_DFBC': lambda x, flag: None,
-    'clsvof_DFBC': lambda x, flag: None}
+#    'clsvof_DFBC': lambda x, flag: None
+}
 
 #auxVariables={'clsvof': [height_gauges1, height_gauges2],
 #              'pressure': [pressure_gauges]}
@@ -290,4 +290,4 @@ myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=0,
 #                                             auxVariables=auxVariables,
                                              useSuperlu=False)
 physical_parameters = myTpFlowProblem.physical_parameters
-myTpFlowProblem.clsvof_parameters['disc_ICs']=False
+#myTpFlowProblem.clsvof_parameters['disc_ICs']=False

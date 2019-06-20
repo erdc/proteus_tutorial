@@ -129,15 +129,16 @@ class PHI_IC:
 ############################################
 outputStepping = TpFlow.OutputStepping(opts.final_time,dt_output=opts.dt_output)
 initialConditions = {'pressure': zero(),
-                     'pressure_increment': zero(),
+#                     'pressure_increment': zero(),
                      'vel_u': zero(),
                      'vel_v': zero(),
                      'vof': VF_IC(),
                      'ncls': PHI_IC(),
                      'rdls': PHI_IC(),
-                     'clsvof': clsvof_init_cond()}
+#                     'clsvof': clsvof_init_cond()
+}
 
-auxVariables={'clsvof': [height_gauges1, height_gauges2],
+auxVariables={'vof': [height_gauges1, height_gauges2],
               'pressure': [pressure_gauges]}
 
 myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=0,
@@ -156,4 +157,4 @@ myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=0,
                                              auxVariables=auxVariables,
                                              useSuperlu=False)
 physical_parameters = myTpFlowProblem.physical_parameters
-myTpFlowProblem.clsvof_parameters['disc_ICs']=True
+#myTpFlowProblem.clsvof_parameters['disc_ICs']=True
