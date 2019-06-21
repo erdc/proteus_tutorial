@@ -1,3 +1,5 @@
+import matplotlib
+
 def CreateFig(dt_output=0.1):
     from tables import  open_file
     archive = open_file('dambreak.h5','r')
@@ -31,7 +33,7 @@ def CreateFig(dt_output=0.1):
         plt.clf()
         plt.xlabel(r'z[m]')
         plt.ylabel(r'x[m]')
-        colors = ['b','g','r','c','m','y','k','w']
+        colors = ['w','b', 'g','r','c','m','y','k']*(max(domain.segmentFlags)//8 + 1)
         plt.xlim(domain.x[0]-0.1*domain.L[0],domain.x[0]+domain.L[0]+0.1*domain.L[0])    
         for si,s in enumerate(domain.segments):
             plt.plot([domain.vertices[s[0]][0],
