@@ -22,17 +22,15 @@ opts= Context.Options([
     ("he",0.01,"he relative to Length of domain in x"),
     ("waterLevel", 0.9,"Height of water column in m"),
     ("tailwater", 0.9,"Height of water column in m"),
-#    ("water_width",8, "width (along x) of  water column in m"),
-    #gravity                                                                                        
     ("g",(0,-9.81,0), "Gravity vector in m/s^2"),
     ("he",0.1, "element diameter"),
-    ("cfl", 0.33 ,"Target cfl"),
     # run time options
-    ("T", 0.1 ,"Simulation time in s"),
     ("dt_fixed", 0.01, "Fixed time step in s"),
     ("dt_init", 0.001 ,"Maximum initial time step in s"),
     ("flowrate",0.5,"unit flowrate for 2d (assuming thickness of 1m)"), 
-    ("slope",0.0,"slope of tilting flume")
+    ("slope",0.0,"slope of tilting flume"),
+    ("flume_length",1.223,"length of flume downstream of flow constriction in m"),
+    ("flume_height",0.6096,"height of flume in m")
     ])
 
 
@@ -105,7 +103,7 @@ for i in range(numvertices):
     newz = a*(((newx-straightend)*1000)**3)/1000
     vertices.append([newx,newz])
 
- ##Concave down portion of flow acceleration                                                        
+0.6096 ##Concave down portion of flow acceleration                                                        
 for i in range(numvertices):
     newx = straightend+LX1+(i+1)*(LX1/(numvertices))
     a = 1.1507*(10**-7)
@@ -114,7 +112,8 @@ for i in range(numvertices):
 
  ##Test section                                                                                     
 begindsstraight = vertices[len(vertices)-1][0]
-endx = 7.61831-0.4572
+endx = begindsstraight + opts.flume_length
+#endx = 7.61831-0.4572
 straightpoints = 40
 spacing = (endx - begindsstraight)/straightpoints #meters                                       
 spacing = spacing*1000 #mm                                                                      
@@ -123,9 +122,11 @@ for i in range(straightpoints):
     vertices.append([newx,0.63152])
         
  ##Top Boundary
- 
-vertices.append([endx,0.63152+0.6096])
-vertices.append([-(0.28617+0.4572),0.63152+0.6096])
+
+vertices.append([endx,0.63152+opts.flume_height])
+#vertices.append([endx,0.63152+0.6096])
+vertices.append([-(0.28617+0.4572),0.63152+opts.flume_height]) 
+#vertices.append([-(0.28617+0.4572),0.63152+0.6096])
 
 #Tilt?
 
@@ -184,6 +185,7 @@ logEvent("""Mesh generated using: tetgen -%s %s"""  % (triangleOptions,domain.po
 #proteus.MeshTools.                                                                                 
 domain.MeshOptions.triangleOptions=triangleOptions
 
+#tailwater=opts.tailwater+vertices[len(vertices)-3][1]
 waterLevel= opts.waterLevel
 bottom=min(vertices, key=lambda x: x[1])[1]
 topy=max(vertices, key=lambda x: x[1])[1]
