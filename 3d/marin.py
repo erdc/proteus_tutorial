@@ -314,6 +314,7 @@ myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=opts.ns_model,
                                              boundaryConditions=boundaryConditions,
                                              auxVariables=auxVariables,
                                              useSuperlu=False)
-myTpFlowProblem.physical_parameters['gravity'] = [0.0,0.0,-9.8]
+#myTpFlowProblem.physical_parameters['gravity'] = [0.0,0.0,-9.8]
+myTpFlowProblem.Parameters.physical.gravity = [0., 0., -9.81] 
 myTpFlowProblem.clsvof_parameters['disc_ICs']=disc_ICs
 myTpFlowProblem.rans3p_parameters['ARTIFICIAL_VISCOSITY']=opts.ARTIFICIAL_VISCOSITY
