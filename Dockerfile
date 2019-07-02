@@ -1,4 +1,4 @@
-FROM erdc/proteus:python3
+FROM erdc/proteus:latest
 
 MAINTAINER Proteus Project <proteus@googlegroups.com>
 
