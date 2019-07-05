@@ -1,4 +1,4 @@
-FROM erdc/proteus:latest
+FROM erdc/proteus:small
 
 MAINTAINER Proteus Project <proteus@googlegroups.com>
 
