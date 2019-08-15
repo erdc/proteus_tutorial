@@ -6,7 +6,7 @@ from proteus.mprans.SpatialTools import Tank2D
 from proteus.mprans import SpatialTools as st
 import proteus.TwoPhaseFlow.TwoPhaseFlowProblem as TpFlow
 from proteus.Gauges import PointGauges, LineIntegralGauges, LineGauges
-
+import numpy as np
 # *************************** #
 # ***** GENERAL OPTIONS ***** #
 # *************************** #
@@ -69,6 +69,16 @@ tank.BC['y+'].setAtmosphere()
 tank.BC['y-'].setFreeSlip()
 tank.BC['x+'].setFreeSlip()
 tank.BC['x-'].setFreeSlip()
+
+
+#my_rectangle = st.Rectangle(domain, dim=[0.5, 0.2], coords=[2.5, 0.21])
+#tank.setHoles([[2.6, 0.22]])    
+#my_rectangle.holes_ind = np.array([0])
+
+#my_rectangle.BC['y+'].setFreeSlip()
+#my_rectangle.BC['y-'].setFreeSlip()
+#my_rectangle.BC['x+'].setFreeSlip()
+#my_rectangle.BC['x-'].setFreeSlip()
 
 he = tank_dim[0]*opts.he
 domain.MeshOptions.he = he
