@@ -1,11 +1,11 @@
 ---
 title: "Running Proteus"
 teaching: 15
-exercises: 0
+exercises: 15
 questions:
-- "What is a Proteus two-phase flow model?"
-- "How do I run a Proteus two-phase flow model?"
-- "How do visualize Proteus results?"
+- "What is a two-phase flow model?"
+- "How do I run Proteus two-phase flow models?"
+- "How do visualize two-phase flow model results?"
 objectives:
 - "Start a Docker container."
 - "Run a Proteus two-phase flow model on the command line."
@@ -13,283 +13,167 @@ objectives:
 - "Open in ParaView."
 keypoints:
 - "Proteus models are Python modules."
-- "Use the Proteus Command Line Interface (CLI), `parun`, to run Proteus models."
-- "Proteus model results are stored in an XDMF archive."
-- "You can use ParaView to view XDMF."
+- "You can use the Proteus Command Line Interface (CLI), `parun`, to run Proteus models."
+- "Proteus model results are written in HDF5 with XDMF metadata."
+- "You can use ParaView to view results."
 ---
 ## Start your Docker environment
-* On Linux run 
+* We will use a Docker container to provide a uniform environment for the tutorial. A similar environment is available on the web and on the DoD HPCMP systems, and it can also be built natively.
+* Run the following in a terminal, PowerShell, etc.
+    ~~~
+    $ docker volume create 2019-08-26-pt
+    $ docker pull erdc/proteus_tutorial
+    $ docker run -it -p 8888:8888 -v 2019-08-26-pt:/home/jovyan/tutorial/data erdc/proteus_tutorial jupyter notebook
+    ~~~
+    {: .language-bash}
+* You should see some output that includes the lines
+    ~~~
+    ...
+    [I 14:39:14.510 NotebookApp] The Jupyter Notebook is running at:
+    [I 14:39:14.510 NotebookApp] http://(d196289a7ce5 or 127.0.0.1):8888/?token=e6d08b401efa97023f4c3adccd491a25f08d3a3ce3bcfe9b
+    ~~~
+    {: .output}
+* Paste that URL into your browser. For example, [http://127.0.0.1:8888/?token=e6d08b401efa97023f4c3adccd491a25f08d3a3ce3bcfe9b](http://127.0.0.1:8888/?token=e6d08b401efa97023f4c3adccd491a25f08d3a3ce3bcfe9b).
 
-    ~~~
-    $ sudo docker pull erdc/proteus:latest
-    $ sudo docker run --net="host" -it erdc/proteus:latest start-notebook.sh
-    ~~~
-    {: .source}
-    
-## Two-phase flow 
+> ## What do these commands do?
+>
+> *   A Docker container is intended to provide a reproducible snapshot of an environment. Thus, when you start (or restart) the "erdc/proteus_tutorial" container, you get exactly what was originally built, which means any work you did in the container earlier is lost.  Instead of requiring you to create new snapshots, we attach persistent storage. 
+> *   In the first command, we create the persistent storage volume called "2019-08-26-pt". This is managed by the docker system and will be mounted in the container. In fact, it can be mounted in multiple containers.
+> *   In the second command, we download the container that we will be using for the tutorial, [erdc/proteus_tutorial](https://cloud.docker.com/u/erdc/repository/docker/erdc/proteus_tutorial).
+> *   In the last command, we run the jupyter notebook, attaching the persistent storage and forwarding the container's port 8888 to your machine's port 8888.
+{: .callout}
+
+## Modeling Two-Phase Flow 
 * We wish to model surface water flow around fixed and moving structures.
-* Specificaly, we wish to include processes such as static and dynamic free-surface waves, flow over and under structures, and moored/free-floating/navigating structures.
+* More specificaly, we wish to include processes such as static and dynamic free-surface waves, flow over and under structures, and moored/free-floating/navigating structures.
 * These process include non-hydrostatic pressure effects, viscous effects, and dynamic, fully three-dimensional velocity distributions, including turbulence.
 * To model the free-surface dynamics accurately and robustly, we model both the air phase and the water phase, with the interface between the two-phases (the free surface) modeled as the zero contour of a signed distance function (also known as the level set approach).
-* The basic output of a proteus model is the pressure, velocity, and the level set field.
+<p align='center'>
+  <img alt="Two-Phase Domain" src="../fig/domain.png" width="750"/>
+</p>
+
+* The basic outputs of a Proteus two-phase flow model are the pressure, velocity, and the level set field.
+
+## Running a Proteus two-phase flow model from the command line
+
+* The proteus Command Line Interface (CLI) is accessed with the `parun` command.
+* To run a basic dambreak case run the following in a jupyter notebook terminal
+    ~~~
+    $ cd 2d
+    $ parun --TwoPhaseFlow dambreak.py -l 1 -v
+    ~~~
+    {: .language-bash}
+    ~~~
+    [       2] Running Proteus version 1.7.0
+    [      19] Setting initial conditions
+    [      21] Starting time stepping
+    [      21] ==============================================================
+    [      21] Solving over interval [ 0.00000e+00, 1.00000e-03]
+    [      21] ==============================================================
+    ...
+    ~~~
+    {: .output}
+
+> ## What does this command do?
+>
+> *   First, it starts the Python interpreter and load the Proteus Python package.
+> *   Next, the "--TwoPhaseFlow dambreak.py" option tells it to load a specific two-phase flow model from "dambreak.py".
+> *   Lastly, the "-l 1 -v" option tells the Proteus package to use a logging level of 1 and to be verbose (print the logging to the screen).
+{: .callout}
+
+> ## Getting help on the CLI
+>
+> How do you find out about "parun" options?
+>
+> > ## Solution
+> > A common convention for command line utilities is to provide a "-h" or "--help" option, and proteus maintains this convention:
+> >
+> > ~~~
+> > $ parun -h
+> > ~~~
+> > {: .language-bash}
+> > ~~~
+> > Usage: parun [options] main.py [soModule.py] [pModule.py nModule.py]
+> >
+> > Options:
+> >  -h, --help            show this help message and exit
+> >  -I INSPECT, --inspect=INSPECT
+> >                        Inspect namespace at 't0','user_step'
+> > ...
+> > ~~~
+> > {: .output}
+> {: .solution}
+{: .challenge}
 
 ## Proteus models are Python modules.
 
-*   They have the ".py" extension to let everyone (including the operating system) 
-    know it is a Python program.
-*   It's common to write them using a text editor but we will also use the Jupyter Notebook.
+*   In theis example the model is defined in the Python module "dambreak.py"
+*   The ".py" extension lets everyone (including the operating system) know it is Python code.
+*   It's common to write Proteus models using a text editor, but we will also use the Jupyter Notebook.
 
-## Use the Jupyter Notebook for editing and running Python.
-
-*   The [Anaconda package manager][anaconda] is an automated way to install the Jupyter notebook.
-    *   See [the setup instructions]({{ site.github.url }}/setup/) for Anaconda installation 
-        instructions.
-*   It also installs all the extra libraries it needs to run.
-*   Once you have installed Python and the Jupyter Notebook requirements, open a shell and type:
-
-    ~~~
-    $ jupyter notebook
-    ~~~
-    {: .source}
-
-*   This will start a Jupyter Notebook server and open your default web browser. 
-*   The server runs locally on your machine only and does not use an internet connection.
-*   The server sends messages to your browser.
-*   The server does the work and the web browser renders the notebook.
-*   You can type code into the browser and see the result when the web page talks to the server.
-*   This has several advantages:
-	- You can easily type, edit, and copy and paste blocks of code.
-	- Tab complete allows you to easily access the names of things you are 
-    using and learn more about them.
-	- It allows you to annotate your code with links, different sized text, bullets, 
-    etc to make it more accessible to you and your collaborators.
-	- It allows you to display figures next to the code that produces them to 
-    tell a complete story of the analysis.
-*   The notebook is stored as JSON but can be saved as a .py file if you would
-    like to run it from the bash shell or a python interpreter.
-*   Just like a webpage, the saved notebook looks different to what you see when 
-    it gets rendered by your browser.
-
-FIXME: diagram
-
-> ## How It's Stored
+> ## Getting help on a model 
 >
-> *   The notebook file is stored in a format called JSON.
-> *   Just like a webpage, what's saved looks different from what you see in your browser.
-> *   But this format allows Jupyter to mix software (in several languages) with documentation 
-      and graphics, all in one file.
-{: .callout}
-
-## The Notebook has Control and Edit modes.
-
-*   Open a new notebook from the dropdown menu in the top right corner of the file browser page.
-*   Each notebook contains one or more cells of various types.
-
-> ## Code vs. Text
+> What additional options are available for the dambreak case?
 >
-> We often use the term "code" to mean "the source code of 
-> software written in a language such as Python". 
-> A "code cell" in a Notebook is a cell that contains software;
-> a "text cell" is one that contains ordinary prose written for human beings.
-{: .callout}
-
-*   If you press "esc" and "return" alternately,
-    the outer border of your code cell will change from gray to green.
-    *   The difference in color is subtle.
-*   These are the control (gray) and edit (green) modes of your notebook.
-*   If you use the "esc" and "return" keys to make the surround gray
-    and then press the "H" key,
-    a list of all the shortcut keys will appear.
-*   When in control mode (esc/gray),
-    *   The "B" key will make a new cell below the currently selected cell.
-    *   The "A" key will make one above.
-    *   The "X" key will delete the current cell.
-*   There are lots of shortcuts you can try out and most actions can be 
-    done with the menus at the top of the page if you forget the shortcuts.
-*   If you remember the "esc" and "H" shortcut, you will be able to find out all the rest.
-
-## Use the keyboard and mouse to select and edit cells.
-
-*   Pressing the "return" key turns the surround green to 
-    signify edit mode and you can type into the cell.
-*   Because we want to be able to write many lines of code in a single cell,
-    pressing the "return" key when the border is green moves the cursor to the next line in the cell
-    just like in a text editor.
-*   We need some other way to tell the Notebook we want to run what's in the cell.
-*   Pressing the "return" key and the "shift" key together will execute the contents of the cell.
-*   Notice that the "return" and "shift" keys on the 
-    right of the keyboard are right next to each other.
-
-## The Notebook will turn Markdown into pretty-printed documentation.
-
-*   Notebooks can also render [Markdown][markdown].
-    *   A simple plain-text format for writing lists, links, 
-        and other things that might go into a web page.
-    *   Equivalently, a subset of HTML that looks like what you'd send in an old-fashioned email.
-*   Turn the current cell into a Markdown cell by entering 
-    the control mode (esc/gray) and press the "M" key.
-*   `In [ ]:` will disappear to show it is no longer a code cell
-    and you will be able to write in Markdown.
-*   Turn the current cell into a Code cell
-    by entering the control mode (esc/gray) and press the "Y" key.
-
-## Markdown does most of what HTML does.
-
-<div class="row">
-  <div class="col-md-6" markdown="1">
-~~~
-*   Use asterisks
-*   to create
-*   bullet lists.
-~~~
-{: .source}
-  </div>
-  <div class="col-md-6" markdown="1">
-*   Use asterisks
-*   to create
-*   bullet lists.
-  </div>
-</div>
-
-<div class="row">
-  <div class="col-md-6" markdown="1">
-~~~
-1.  Use numbers
-1.  to create
-1.  numbered lists.
-~~~
-{: .source}
-  </div>
-  <div class="col-md-6" markdown="1">
-1.  Use numbers
-1.  to create
-1.  numbered lists.
-  </div>
-</div>
-
-<div class="row">
-  <div class="col-md-6" markdown="1">
-~~~
-# A Level-1 Heading
-~~~
-{: .source}
-  </div>
-  <div class="col-md-6" markdown="1">
-# A Level-1 Heading
-  </div>
-</div>
-
-<div class="row">
-  <div class="col-md-6" markdown="1">
-~~~
-## A Level-2 Heading (etc.)
-~~~
-{: .source}
-  </div>
-  <div class="col-md-6" markdown="1">
-## A Level-2 Heading (etc.)
-  </div>
-</div>
-
-<div class="row">
-  <div class="col-md-6" markdown="1">
-~~~
-Line breaks
-don't matter.
-
-But blank lines
-create new paragraphs.
-~~~
-{: .source}
-  </div>
-  <div class="col-md-6" markdown="1">
-Line breaks
-don't matter.
-
-But blank lines
-create new paragraphs.
-  </div>
-</div>
-
-<div class="row">
-  <div class="col-md-6" markdown="1">
-~~~
-[Create links](http://software-carpentry.org) with `[...](...)`.
-Or use [named links][data_carpentry].
-
-[links]: http://datacarpentry.org
-~~~
-{: .source}
-  </div>
-  <div class="col-md-6" markdown="1">
-[Create links](http://software-carpentry.org) with `[...](...)`.
-Or use [named links][data_carpentry].
-
-[data_carpentry]: http://datacarpentry.org
-  </div>
-</div>
-
-> ## Creating Lists in Markdown
->
-> Create a nested list in a Markdown cell in a notebook that looks like this:
->
-> 1.  Get funding.
-> 2.  Do work.
->     *   Design experiment.
->     *   Collect data.
->     *   Analyze.
-> 3.  Write up.
-> 4.  Publish.
+> > ## Solution
+> > Proteus models can have their own context options. These are aspects of the simulation that you might wish to change without modifying the Python code for the model. To see the options, pass "?" to the "-C" (context) option.
+> >
+> > ~~~
+> > $ parun --TwoPhaseFlow dambreak.py -C "?"
+> > ~~~
+> > {: .language-bash}
+> > ~~~
+> > Context input options:
+> > final_time[3.0] Final time for simulation
+> >
+> > dt_output[0.01] Time interval to output solution
+> >
+> > cfl[0.9] Desired CFL restriction
+> > 
+> > he[0.01] he relative to Length of domain in x
+> >
+> > refinement[3] level of refinement
+> > ~~~
+> > {: .output}
+> {: .solution}
 {: .challenge}
 
-> ## More Math
->
-> What is displayed when a Python cell in a notebook
-> that contains several calculations is executed?
-> For example, what happens when this cell is executed?
->
-> ~~~
-> 7 * 3
-> 2 + 1
-> ~~~
-> {: .source}
-{: .challenge}
+## Proteus model output
 
-> ## Change an Existing Cell from Code to Markdown
->
-> What happens if you write some Python in a code cell
-> and then you switch it to a Markdown cell?
-> For example,
-> put the following in a code cell:
->
-> ~~~
-> x = 6 * 7 + 12
-> print(x)
-> ~~~
-> {: .python}
->
-> And then run it with shift+return to be sure that it works as a code cell.
-> Now go back to the cell and use escape+M to switch the cell to Markdown
-> and "run" it with shift+return.
-> What happened and how might this be useful?
-{: .challenge}
+* Proteus stores the results of model runs in [HDF5](https://portal.hdfgroup.org/display/HDF5/HDF5).
+* It also stores metadata on the data following the [XDMF](https://xdmf.org) convetions.
+* [ParaView](https://paraview.org) can be used to visualize the data archive.
+* Select the "dambreak.xmf" file and then click on Download.
+<p align='center'>
+  <img alt="Jupyter file download" src="../fig/download.png" width="750"/>
+</p>
+* Do the same for "dambreak.h5"
 
-> ## Equations
->
-> Standard Markdown (such as we're using for these notes) won't render equations,
-> but the Notebook will.
-> Create a new Markdown cell
-> and enter the following:
->
-> ~~~
-> $\Sigma_{i=1}^{N} 2^{-i} \approx 1$
-> ~~~
-> {: .source}
->
-> (It's probably easier to copy and paste.)
-> What does it display?
-> What do you think the underscore `_`, circumflex `^`, and dollar sign `$` do?
-{: .challenge}
+## Opening model output with ParaView
+* Start ParaView, select "File", then "Open", then "dambreak.xmf".
+<p align='center'>
+  <img alt="Paraview File Open" src="../fig/paraviewOpen.png" width="750"/>
+</p>
 
-[anaconda]: https://docs.continuum.io/anaconda/install
-[markdown]: https://en.wikipedia.org/wiki/Markdown
+* Select the XDMF reader to handle the file.
+<p align='center'>
+  <img alt="Paraview XDMF reader" src="../fig/paraviewXDMF.png" width="250"/>
+</p>
+
+* Select "Accept" then select the velocity field.
+<p align='center'>
+  <img alt="Paraview XDMF reader" src="../fig/paraviewVel.png" width="750"/>
+</p>
+
+> ## Visualize the air/water interface
+>
+> Proteus represents the air/water interface (water surface) as the zero contour of signed distance field "phi". Use ParaView to plot the zero contour as a black line.
+>
+> > ## Solution
+> > ParaView organizes visualization as a series of "filters" applied to the data. You can find the available filters, including the "Contour" filter, in the Filters menu. Then select the "phi" field and enter the value of the contour you wish to plot (0.0).
+> {: .solution}
+{: .challenge}
+<p align='center'>
+<img alt="Paraview XDMF reader" src="../fig/dambreak.png" width="750"/>
+</p>
+
