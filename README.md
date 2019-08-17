@@ -1,4 +1,4 @@
-# training_proteus [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/erdc/training_proteus/master?filepath=index.ipynb)
+# Proteus Tutorial [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/erdc/proteus_tutorial/master?filepath=index.ipynb)
 
 Training material for Proteus workshops and tutorials.
 
