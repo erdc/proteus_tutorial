@@ -23,7 +23,7 @@ keypoints:
     ~~~
     $ docker volume create 2019-08-26-pt
     $ docker pull erdc/proteus_tutorial
-    $ docker run -it -p 8888:8888 -v 2019-08-26-pt:/home/jovyan/tutorial/data erdc/proteus_tutorial jupyter notebook
+    $ docker run -it -v 2019-08-26-pt:/home/jovyan/proteus_tutorial/work -p 8888:8888 erdc/proteus_tutorial:latest jupyter notebook --ip=0.0.0.0 --port 8888 --no-browser
     ~~~
     {: .language-bash}
 * You should see some output that includes the lines
