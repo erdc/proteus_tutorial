@@ -13,11 +13,10 @@ import numpy as np
 # ***** GENERAL OPTIONS ***** #
 # *************************** #
 opts= Context.Options([
-    ("final_time",3.0,"Final time for simulation"),
+    ("final_time",1.5,"Final time for simulation"),
     ("dt_output",0.01,"Time interval to output solution"),
     ("cfl",0.9,"Desired CFL restriction"),
-    ("he",0.01,"he relative to Length of domain in x"),
-    ("refinement",3,"level of refinement"),
+    ("he",0.02,"he relative to Length of domain in x"),
     ("x_tank",3.22,"extent of domain in x"),
     ("y_tank",1.8,"extent of domain in y")
     ])
@@ -29,13 +28,8 @@ tank_dim = (opts.x_tank,opts.y_tank)
 
 structured=False
 if structured:
-    nny = 5*(2**refinement)+1
-    nnx = 2*(nnx-1)+1
     domain = Domain.RectangularDomain(tank_dim)
-    boundaryTags = domain.boundaryTags
-    triangleFlag=1
 else:
-    nnx = nny = None
     domain = Domain.PlanarStraightLineGraphDomain()
 
 # ----- TANK ----- #
@@ -47,10 +41,6 @@ tank.BC['y-'].setFreeSlip()
 tank.BC['x+'].setFreeSlip()
 tank.BC['x-'].setFreeSlip()
 
-he = tank_dim[0]*opts.he
-domain.MeshOptions.he = he
-st.assembleDomain(domain)
-domain.MeshOptions.triangleOptions = "VApq30Dena%8.8f" % ((he ** 2)/2.0,)
 
 # ****************************** #
 # ***** INITIAL CONDITIONS ***** #
@@ -82,7 +72,18 @@ class PHI_IC:
                 return phi_x
             else:
                 return (phi_x ** 2 + phi_y ** 2)**0.5
-        
+
+#########################
+# ***** Numerics ****** #
+#########################
+#for structured
+nny = int(tank_dim[1]/opts.he)+1
+nnx = int(tank_dim[0]/opts.he)+1
+#for unstructured
+domain.MeshOptions.he = opts.he
+st.assembleDomain(domain)
+domain.MeshOptions.triangleOptions = "VApq30Dena%8.8f" % ((opts.he ** 2)/2.0,)
+
 ############################################
 # ***** Create myTwoPhaseFlowProblem ***** #
 ############################################
@@ -101,13 +102,8 @@ myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=0,
                                              cfl=opts.cfl,
                                              outputStepping=outputStepping,
                                              structured=structured,
-                                             he=he,
+                                             he=opts.he,
                                              nnx=nnx,
                                              nny=nny,
-                                             nnz=None,
                                              domain=domain,
-                                             initialConditions=initialConditions,
-                                             boundaryConditions=None,
-                                             auxVariables=auxVariables,
-                                             useSuperlu=False)
-physical_parameters = myTpFlowProblem.physical_parameters
+                                             initialConditions=initialConditions)
