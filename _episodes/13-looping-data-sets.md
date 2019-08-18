@@ -1,7 +1,7 @@
 ---
 title: "Looping Over Data Sets"
 teaching: 5
-exercises: 10
+exercises: 5
 questions:
 - "How can I process many data sets with a single command?"
 objectives:
