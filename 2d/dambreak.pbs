@@ -1,0 +1,22 @@
+#!/bin/csh                                                                                         
+#PBS -A ERDCV00898ENQ                                                                              
+#PBS -l walltime=10:00:00                                                                          
+#PBS -l select=16:ncpus=44:mpiprocs=44                                                              
+#PBS -l place=scatter:excl                                                                         
+#PBS -q standard                                                                                   
+#PBS -N dambreak_test                                                                                         
+#PBS -j oe                                                                                         
+#PBS -l application=proteus                                                                        
+#PBS -V                                                                                            
+#PBS -m eba                                                                                                    
+
+module load proteus
+                                                                                       
+cd $PBS_O_WORKDIR
+mkdir -p $WORKDIR/training/dambreak.$PBS_JOBID
+cp dambreak.py $WORKDIR/training/dambreak.$PBS_JOBID
+cp dambreak_test.pbs $WORKDIR/training/dambreak.$PBS_JOBID
+cd $WORKDIR/training/dambreak.$PBS_JOBID
+
+#aprun -n 44 parun --TwoPhaseFlow -f dambreak.py -l 5 -F -C "he=0.01 final_time=5." -D test01
+aprun -n ${BC_MPI_TASKS_ALLOC} parun --TwoPhaseFlow -f dambreak.py -l 5 -F -C "he=0.01 final_time=5." -D test01
