@@ -1,0 +1,25 @@
+#!/bin/bash
+#PBS -A ERDCV00898R40
+#PBS -l walltime=001:00:00
+#PBS -l select=1:ncpus=44:mpiprocs=44
+#PBS -l place=scatter:excl
+#PBS -q debug
+#PBS -N dambreak
+#PBS -j oe
+#PBS -l application=proteus
+#PBS -V
+#PBS -m eba
+#PBS -M cekees@gmail.com
+#setup modules
+. /opt/cray/pe/modules/default/etc/modules.sh
+export MODULEPATH=/p/app/unsupported/proteus/modulefiles:${MODULEPATH}
+#create a working directory and copy over the inputs use
+cd $PBS_O_WORKDIR
+mkdir $WORKDIR/$PBS_JOBNAME.$PBS_JOBID
+cp dambreak.py $WORKDIR/$PBS_JOBNAME.$PBS_JOBID
+cp dambreak.pbs $WORKDIR/$PBS_JOBNAME.$PBS_JOBID
+cp petsc.options.mumps $WORKDIR/$PBS_JOBNAME.$PBS_JOBID
+cd  $WORKDIR/$PBS_JOBNAME.$PBS_JOBID
+module load proteus/master
+which parun
+aprun -n ${BC_MPI_TASKS_ALLOC}  parun -l 5 --TwoPhaseFlow dambreak.py -C "he=0.0125" -O petsc.options.mumps
