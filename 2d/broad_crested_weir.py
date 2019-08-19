@@ -17,15 +17,14 @@ from proteus.Gauges import PointGauges, LineIntegralGauges, LineGauges
 opts= Context.Options([
     ("final_time",4.0,"Final time for simulation"),
     ("dt_output",0.01,"Time interval to output solution"),
-    ("cfl",0.25,"Desired CFL restriction"),
+    ("cfl",0.9,"Desired CFL restriction"),
     ("he",0.01,"he relative to Length of domain in x"),
     ("inflow_vel",0.139,"inflow velocity for left boundary"),
     ])
 
 waterLine_y = 0.54
-waterLine_x = 1.02
+waterLine_x = 1.45
 outflow_level=0.04
-he=opts.he
 # Water                                                                                              
 rho_0 = 998.2
 nu_0 = 1.004e-6
@@ -110,37 +109,39 @@ tank = st.CustomShape(domain, vertices=vertices, vertexFlags=vertexFlags,
 # ----- EXTRA BOUNDARY CONDITIONS ----- #
 tank.BC['y+'].setAtmosphere()
 tank.BC['y-'].setFreeSlip()
-tank.BC['x+'].setFreeSlip()
-#tank.BC['x-'].setFreeSlip()
-
 tank.BC['x-'].setTwoPhaseVelocityInlet(U=[opts.inflow_vel,0.,0.],
-                                           waterLevel=waterLine_y,
-                                           smoothing=3.0*he,
-                                           )
-tank.BC['x-'].p_advective.uOfXT = lambda x, t: -opts.inflow_vel
-
+                                       waterLevel=waterLine_y,
+                                       smoothing=1.5*opts.he,
+)
 tank.BC['x+'].setHydrostaticPressureOutletWithDepth(seaLevel=outflow_level,
                                                     rhoUp=rho_1,
                                                     rhoDown=rho_0,
                                                     g=g,
                                                     refLevel=1.0,
-                                                    smoothing=3.0*he,
-                                                    )
-
-
+                                                    smoothing=1.5*opts.he,
+)
+# tank.BC['x-'].reset()
+# tank.BC['x-'].p_advective.uOfXT = lambda x, t: -opts.inflow_vel
+# tank.BC['x-'].u_dirichlet.uOfXT = lambda x, t: opts.inflow_vel
+# tank.BC['x-'].v_dirichlet.uOfXT = lambda x, t: 0.0
+# tank.BC['x-'].w_dirichlet.uOfXT = lambda x, t: 0.0
+# def inflowVOF(x,t):
+#     if x[1] < waterLine_y:
+#         return 0.0
+#     else:
+#         return 1.0
+# tank.BC['x-'].vof_dirichlet.uOfXT = inflowVOF
 
 tank.BC['airvent'].reset()
 tank.BC['airvent'].p_dirichlet.uOfXT = lambda x, t: (1.0 - x[1])*rho_1*abs(g[1])
 tank.BC['airvent'].v_dirichlet.uOfXT = lambda x, t: 0.0
-#tank.BC['airvent'].vof_dirichlet.uOfXT = lambda x, t: 1.0
-#tank.BC['airvent'].u_advective.uOfXT = lambda x, t: 0.0
+tank.BC['airvent'].vof_dirichlet.uOfXT = lambda x, t: 1.0
 tank.BC['airvent'].u_diffusive.uOfXT = lambda x, t: 0.0
 tank.BC['airvent'].v_diffusive.uOfXT = lambda x, t: 0.0
 
-he = opts.he
-domain.MeshOptions.he = he
+domain.MeshOptions.he = opts.he
 st.assembleDomain(domain)
-domain.MeshOptions.triangleOptions = "VApq30Dena%8.8f" % (old_div((he ** 2), 2.0),)
+domain.MeshOptions.triangleOptions = "VApq30Dena%8.8f" % ((opts.he ** 2)/2.0,)
 
 # ****************************** #
 # ***** INITIAL CONDITIONS ***** #
@@ -204,12 +205,9 @@ myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=0,
                                              nd=2,
                                              cfl=opts.cfl,
                                              outputStepping=outputStepping,
-                                             he=he,
-                                             nnx=None,
-                                             nny=None,
-                                             nnz=None,
+                                             he=opts.he,
                                              domain=domain,
-                                             initialConditions=initialConditions,
-                                             boundaryConditions=None,
-                                             useSuperlu=False)
-physical_parameters = myTpFlowProblem.physical_parameters
+                                             initialConditions=initialConditions)
+#copts=myTpFlowProblem.Parameters.Models.rans2p.p.CoefficientsOptions
+#copts.forceStrongDirichlet=True
+
