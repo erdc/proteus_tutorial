@@ -5,8 +5,8 @@ exercises: 45
 questions:
 - "What is Fluid-Structure Interaction (FSI)?"
 - "How can I model moving solid structures?"
-- "What is the Arbitrary Lagrangian-Euleren approach to FSI?"
-- "What is the Immersed Finiete Element approach to FSI?"
+- "What is the Arbitrary Lagrangian-Eulerian approach to FSI?"
+- "What is the Immersed Finite Element approach to FSI?"
 - "What is added mass?"
 objectives:
 - "Gather feedback on the class"
