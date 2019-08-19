@@ -1,0 +1,22 @@
+#!/bin/csh                                                                                         
+#PBS -A ERDCV00898ENQ                                                                              
+#PBS -l walltime=1:00:00                                                                          
+#PBS -l select=1:ncpus=44:mpiprocs=44                                                              
+#PBS -l place=scatter:excl                                                                         
+#PBS -q debug                                                                                   
+#PBS -N broad_crested_weir                                                                                         
+#PBS -j oe                                                                                         
+#PBS -l application=proteus                                                                        
+#PBS -V                                                                                            
+#PBS -m eba                                                                                                    
+
+module load proteus
+                                                                                       
+cd $PBS_O_WORKDIR
+mkdir -p $WORKDIR/training/dambreak.$PBS_JOBID
+cp broad_crested_weir.py $WORKDIR/training/dambreak.$PBS_JOBID
+cp broad_crested_weir.pbs $WORKDIR/training/dambreak.$PBS_JOBID
+cd $WORKDIR/training/dambreak.$PBS_JOBID
+
+aprun -n ${BC_MPI_TASKS_ALLOC} parun --TwoPhaseFlow -f broad_crested_weir.py -l 5 -F -C "he=0.01 final_time=1.5" -D test
+#aprun -n 1 parun --TwoPhaseFlow -f template_st.py -l 5 -F -C "he=0.005" -D test
