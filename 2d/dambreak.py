@@ -108,6 +108,5 @@ myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=0,
                                              domain=domain,
                                              initialConditions=initialConditions,
                                              boundaryConditions=None,
-                                             auxVariables=auxVariables,
                                              useSuperlu=False)
 physical_parameters = myTpFlowProblem.physical_parameters
