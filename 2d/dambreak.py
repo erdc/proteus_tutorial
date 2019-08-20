@@ -16,7 +16,7 @@ opts= Context.Options([
     ("final_time",3.0,"Final time for simulation"),
     ("dt_output",0.01,"Time interval to output solution"),
     ("cfl",0.9,"Desired CFL restriction"),
-    ("he",0.01,"he relative to Length of domain in x"),
+    ("he",0.025,"he relative to Length of domain in x"),
     ("refinement",3,"level of refinement"),
     ("x_tank",3.22,"extent of domain in x"),
     ("y_tank",1.8,"extent of domain in y")
