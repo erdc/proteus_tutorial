@@ -52,14 +52,14 @@ opts=Context.Options([
     ('caisson_BC', 'FreeSlip', 'caisson2D boundaries: NoSlip or FreeSlip'),
     ("free_x", np.array([0., 0., 0.]), "Translational DOFs"),
     ("free_r", np.array([0., 0., 1.0]), "Rotational DOFs"),
-    ("caisson_inertia", 0.236, "Inertia of the caisson0.236, 1.04 [kg m2]"),
+    ("caisson_inertia", 0.236, "Inertia of the caisson 0.236, 1.04 [kg m2]"),
     ("rotation_angle", 0., "Initial rotation angle (in degrees)"),
     ("Tn", 0.93, "Roll natural period"),
     ("overturning", True, "Switch on/off overturning module"),
     
     # Numerical Settings & Parameters
-    ("refinement_level", 1,"he=walength/refinement_level"),
-    ("he", 0.04,"he=walength/refinement_level"),
+    ("refinement_level", 1,"he=wavelength/refinement_level"),
+    ("he", 0.06,"he=wavelength/refinement_level"),##???
     ("cfl", 0.4,"Target cfl"),
     ("duration", 10., "Duration of the simulation"),
     ("Tend", 1000, "Simulation time in s"),
@@ -157,15 +157,15 @@ boundaryTags = {'y-' : 1,
 
 tank.BC['x-'].setUnsteadyTwoPhaseVelocityInlet(wave=wave, smoothing=smoothing, vert_axis=1)
 tank.BC['y+'].setAtmosphere() 
-tank.BC['y-'].setFreeSlip()  #sliding mesh nodes
+tank.BC['y-'].setFreeSlip()
 tank.BC['x+'].setFreeSlip()
 tank.BC['sponge'].setNonMaterial()
 
 tank.BC['x-'].setFixedNodes()
 tank.BC['x+'].setFixedNodes()
 tank.BC['sponge'].setFixedNodes()
-tank.BC['y+'].setTank() 
-tank.BC['y-'].setTank()
+tank.BC['y+'].setTank() #Allows nodes to slip freely
+tank.BC['y-'].setTank() #Allows nodes to slip freely
 
 
 ###################	Generation & Absorption Zone	###################
