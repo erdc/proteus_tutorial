@@ -38,7 +38,6 @@ opts=Context.Options([
     ("wave_height", 0.1, "Height of the waves in m"),
     ("depth", 0.9, "Wave depth in m"),
     ("waveDir", np.array([1., 0., 0.]), "Direction of the waves (from left boundary)"),
-    ("fract", 1.,"total simulation time/ chosen simulation time"),
     ("Nf",8,"Fenton Fourier Components"),
     ("ecH",3.,"Smoothing Coefficient"),
     ("wave", True, "Enable Generation"),
@@ -48,9 +47,9 @@ opts=Context.Options([
     ("center", (0.5, 0.9),"Coord of the caisson center"),
     ("dim",(0.3,0.1),"(X-dimension of the caisson2D,Y-dimension of the caisson2D"),
     ('width', 0.9, 'Z-dimension of the caisson2D'),
-    ('mass', 125., 'Mass of the caisson2D [kg]'),
+    ('mass', 15., 'Mass of the caisson2D [kg]'),#125
     ('caisson_BC', 'FreeSlip', 'caisson2D boundaries: NoSlip or FreeSlip'),
-    ("free_x", np.array([0., 0., 0.]), "Translational DOFs"),
+    ("free_x", np.array([0., 1.0, 0.0]), "Translational DOFs"),
     ("free_r", np.array([0., 0., 1.0]), "Rotational DOFs"),
     ("caisson_inertia", 0.236, "Inertia of the caisson 0.236, 1.04 [kg m2]"),
     ("rotation_angle", 0., "Initial rotation angle (in degrees)"),
@@ -58,8 +57,7 @@ opts=Context.Options([
     ("overturning", True, "Switch on/off overturning module"),
     
     # Numerical Settings & Parameters
-    ("refinement_level", 1,"he=wavelength/refinement_level"),
-    ("he", 0.06,"he=wavelength/refinement_level"),
+    ("he", 0.06,"maximum element edge length"),
     ("cfl", 0.4,"Target cfl"),
     ("duration", 10., "Duration of the simulation"),
     ("Tend", 1000, "Simulation time in s"),
@@ -119,7 +117,7 @@ if opts.caisson2D:
 
 # --- Body properties setup
     #caisson2D = bd.RigidBody(shape=caisson, substeps=20)
-    caisson2D = bd.CaissonBody(shape=caisson, substeps=20)
+    caisson2D = bd.CaissonBody(shape=caisson, substeps=40)
     caisson2D.setMass(mass=opts.mass)
     caisson2D.setConstraints(free_x=opts.free_x, free_r=opts.free_r)
     rotation = np.radians(opts.rotation_angle)
@@ -220,7 +218,6 @@ genMesh=True
 #waterLine_x = 2*opts.tank_dim[0]
 waterLine_x = 1000
 waterLine_z = opts.water_level
-Duration= opts.Tend/opts.fract
 dt_output = opts.T/opts.Np
 
 def signedDistance(x):
