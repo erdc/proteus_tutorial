@@ -59,7 +59,7 @@ opts=Context.Options([
     
     # Numerical Settings & Parameters
     ("refinement_level", 1,"he=wavelength/refinement_level"),
-    ("he", 0.06,"he=wavelength/refinement_level"),##???
+    ("he", 0.06,"he=wavelength/refinement_level"),
     ("cfl", 0.4,"Target cfl"),
     ("duration", 10., "Duration of the simulation"),
     ("Tend", 1000, "Simulation time in s"),
