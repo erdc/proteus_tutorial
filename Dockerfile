@@ -1,4 +1,4 @@
-FROM erdc/proteus:small
+FROM erdc/proteus:latest
 
 MAINTAINER Proteus Project <proteus@googlegroups.com>
 
@@ -12,6 +12,14 @@ RUN rm -rf /home/$NB_USER/proteus/.git
 RUN rm -rf /home/$NB_USER/stack/.git
 RUN rm -rf /home/$NB_USER/air-water-vv/.git
 RUN rm -rf /home/$NB_USER/.cache
-RUN git clone http://github.com/erdc/training_proteus
+RUN git clone http://github.com/erdc/proteus_tutorial
 
-WORKDIR /home/$NB_USER/training_proteus
+WORKDIR /home/$NB_USER/proteus_tutorial
+
+USER root
+
+RUN mkdir /home/$NB_USER/proteus_tutorial/work
+RUN chown -R $NB_USER:users /home/$NB_USER/proteus_tutorial/work
+VOLUME /home/$NB_USER/proteus_tutorial/work
+
+USER $NB_USER
