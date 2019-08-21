@@ -47,9 +47,9 @@ opts=Context.Options([
     ("center", (0.5, 0.9),"Coord of the caisson center"),
     ("dim",(0.3,0.1),"(X-dimension of the caisson2D,Y-dimension of the caisson2D"),
     ('width', 0.9, 'Z-dimension of the caisson2D'),
-    ('mass', 15., 'Mass of the caisson2D [kg]'),#125
+    ('mass', 125., 'Mass of the caisson2D [kg]'),#125
     ('caisson_BC', 'FreeSlip', 'caisson2D boundaries: NoSlip or FreeSlip'),
-    ("free_x", np.array([0., 1.0, 0.0]), "Translational DOFs"),
+    ("free_x", np.array([0., 0.0, 0.0]), "Translational DOFs"),
     ("free_r", np.array([0., 0., 1.0]), "Rotational DOFs"),
     ("caisson_inertia", 0.236, "Inertia of the caisson 0.236, 1.04 [kg m2]"),
     ("rotation_angle", 0., "Initial rotation angle (in degrees)"),
@@ -66,11 +66,9 @@ opts=Context.Options([
     ("sigma_01", 0.,"surface tension"),
     ('movingDomain', True, "Moving domain and mesh option"),
     ('scheme', 'Forward_Euler', 'Numerical scheme applied to solve motion calculation (Runge_Kutta or Forward_Euler)'),
-
     ])
 
-
-# --- Domain
+###################     Fluid Domain         ###################
 domain = Domain.PlanarStraightLineGraphDomain()
 
 # --- Wave input
@@ -89,7 +87,7 @@ wave_length=wave.wavelength
 # --- Tank Setup
 tank = st.Tank2D(domain, opts.tank_dim)
 
-###################	Caisson		###################
+###################	Body Domain	###################
 
 # ---  Caisson2D Geometry / Shapes
 xc1 = opts.center[0]-0.5*opts.dim[0]
@@ -100,7 +98,6 @@ xc3 = xc2
 yc3 = yc2+opts.dim[1]
 xc4 = xc1
 yc4 = yc3
-
 
 # --- Caisson2D Properties
 if opts.caisson2D:
@@ -113,7 +110,6 @@ if opts.caisson2D:
     caisson = st.Rectangle(domain, dim=opts.dim, coords=opts.center)
     xc1, yc1 = caisson.vertices[0][0], caisson.vertices[0][1]
     xc2, yc2 = caisson.vertices[1][0], caisson.vertices[1][1]
-   
 
 # --- Body properties setup
     #caisson2D = bd.RigidBody(shape=caisson, substeps=20)
@@ -165,7 +161,6 @@ tank.BC['sponge'].setFixedNodes()
 tank.BC['y+'].setTank() #Allows nodes to slip freely
 tank.BC['y-'].setTank() #Allows nodes to slip freely
 
-
 ###################	Generation & Absorption Zone	###################
 
 dragAlpha = 5*(2*np.pi/opts.T)
@@ -176,64 +171,14 @@ tank.setAbsorptionZones(x_p=True, dragAlpha=dragAlpha)
 if opts.caisson2D:
     tank.setChildShape(caisson, 0)
 
-###################	Gauges		###################
-
-gauge_dx=0.25
-tank_dim_x=int(opts.tank_dim[0])
-nprobes=int(opts.tank_dim[0]/gauge_dx)+1
-probes=np.linspace(0., opts.tank_dim[0], nprobes)
-PG=[]
-if opts.caisson2D:
-    zProbes=yc1*0.5
-else:
-    zProbes=opts.water_level*0.5
-for i in probes:
-    PG.append((i, zProbes, 0.),)
-
-if opts.caisson2D:
-    gauge_dy=0.01
-    tol=np.array([1*(10**-5),1*(10**-5),0.])
-    i_point_f=np.array([caisson.vertices[0][0],caisson.vertices[0][1],0.])
-    i_point_f += -tol #to avoid floating point error
-    i_point_b=np.array([caisson.vertices[1][0],caisson.vertices[1][1],0.])
-    i_point_b += tol #to avoid floating point error
-    yProbes = np.linspace(i_point_f[1],i_point_f[1]+opts.dim[1], int(opts.dim[1]/gauge_dy)+1)
-    LG1=[]
-    LG2=[]
-    for j in yProbes:
-        LG1.append((i_point_f[0],j,0.),)
-        LG2.append((i_point_b[0],j,0.),)
-
-tank.attachPointGauges(
-        'ls',
-        gauges=((('phi',),PG),),
-        activeTime = (0., opts.T),
-        sampleRate=0.,
-        fileName='levelset_gauges.csv')
+# --- Assemble Domain                                                                                                                                                                                                                                                 
+domain.MeshOptions.he = opts.he
+st.assembleDomain(domain)
 
 ###################	Initial Conditions	###################
 
-movingDomain=opts.movingDomain
-genMesh=True
-#waterLine_x = 2*opts.tank_dim[0]
-waterLine_x = 1000
-waterLine_z = opts.water_level
-dt_output = opts.T/opts.Np
-
 def signedDistance(x):
-    phi_x = x[0]- waterLine_x
-    phi_y = x[1] - opts.water_level
-    if phi_x < 0.0:
-        if phi_y < 0.0:
-            return max(phi_x, phi_y)
-        else:
-            return phi_y
-    else:
-        if phi_y < 0.0:
-            return phi_x
-        else:
-            return np.sqrt(phi_x ** 2 + phi_y ** 2)
-
+    return x[1] - opts.water_level
 
 class P_IC:
     def __init__(self):
@@ -246,11 +191,6 @@ class P_IC:
 class AtRest:
     def uOfXT(self, x, t):
         return 0.0
-
-initialConditions = {'pressure': P_IC(),
-                     'vel_u': AtRest(),
-                     'vel_v': AtRest(),
-                     'vel_w': AtRest()}
 class VOF_IC:
     def uOfXT(self,x,t):
         return smoothedHeaviside(opts.ecH*opts.he, signedDistance(x))
@@ -259,45 +199,35 @@ class LS_IC:
     def uOfXT(self,x,t):
         return signedDistance(x)
 
+initialConditions = {'pressure': P_IC(),
+                     'vel_u': AtRest(),
+                     'vel_v': AtRest(),
+                     'vel_w': AtRest(),
+                     'vof': VOF_IC(),
+                     'ncls': LS_IC(),
+                     'rdls': LS_IC(),}
 
-
-initialConditions['vof'] = VOF_IC()
-initialConditions['ncls'] = LS_IC()
-initialConditions['rdls'] = LS_IC()
-
-# --- Timestepping for output
-
-
+###################     Time step controls      ################### 
+dt_output = opts.T/opts.Np
 outputStepping = TpFlow.OutputStepping(final_time=opts.duration,
                                        dt_init=opts.dt_init,
-                                       # cfl=cfl,
                                        dt_output=dt_output,
                                        nDTout=None,
                                        dt_fixed=None)
 
-myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=None,
-                                             ls_model=None,
+myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=0,
+                                             ls_model=0,
                                              nd=domain.nd,
                                              cfl=opts.cfl,
                                              outputStepping=outputStepping,
-                                             structured=False,
                                              he=opts.he,
-                                             nnx=None,
-                                             nny=None,
-                                             nnz=None,
                                              domain=domain,
-                                             initialConditions=initialConditions,
-                                             boundaryConditions=None, # set with SpatialTools,
-                                             )
+                                             initialConditions=initialConditions)
 
 # --- Physical Parameters for Two Phase Flow
 
 params = myTpFlowProblem.Parameters
 myTpFlowProblem.useSuperLu=False#True
-params.physical.densityA = opts.rho_0  # water
-params.physical.densityB = opts.rho_1  # air
-params.physical.kinematicViscosityA = opts.nu_0  # water
-params.physical.kinematicViscosityB = opts.nu_1  # air
 params.physical.surf_tension_coeff = opts.sigma_01
 
 # ---  index in order of
@@ -311,9 +241,4 @@ m.ncls.index = 3
 m.rdls.index = 4
 m.mcorr.index = 5
 
-
-# --- Assemble Domain	
-
-domain.MeshOptions.he = opts.he
-st.assembleDomain(domain)
 myTpFlowProblem.Parameters.Models.rans2p.auxiliaryVariables += domain.auxiliaryVariables['twp']
