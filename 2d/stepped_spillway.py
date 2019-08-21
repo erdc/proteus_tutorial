@@ -147,7 +147,6 @@ xstep=vertices[int(min(range(len(vertices)), key=lambda i: abs(np.array(vertices
 def signedDistance(X):
     x=X[0]
     y=X[1]
-
     if x < weir:
         return y-waterLevel
     elif x > xstep:
@@ -156,7 +155,7 @@ def signedDistance(X):
         d1= ((y-waterLevel)**2 + (x-weir)**2)**0.5
         d2= ((y-tailwater)**2 + (x-xstep)**2)**0.5
         return min(d1,d2)
-    
+
 class zero(object):
     def uOfXT(self,x,t):
         return 0.0
@@ -170,12 +169,11 @@ class PHI_IC:
         return signedDistance(x)
 
 epsFact_consrv_heaviside = 3.0
-    
 class VF_IC:
     def uOfXT(self, x, t):
         return smoothedHeaviside(epsFact_consrv_heaviside*he,signedDistance(x))
 
-# ******************************* #           
+# ******************************* #
 # ***** BC input functions  ***** #
 # ******************************* #
 
@@ -223,7 +221,6 @@ def outbcVF(X,t):
 def outbcPhi(X,t):
     return X[1] - tailwater
 
-    
 # ******************************* #                                                                  
 # ***** BOUNDARY CONDITIONS ***** #                                                                  
 # ******************************* #                                                                  
@@ -259,11 +256,11 @@ def clsvof_DBC(x,flag):
 
 def vof_DBC(x,flag):
     if flag ==boundaryTags['top']:
-	return lambda x,t: 1.0
+        return lambda x,t: 1.0
     elif flag == boundaryTags['inflow']:
-	return inbcVF
+        return inbcVF
     elif flag == boundaryTags['outflow']:
-	return outbcVF
+        return outbcVF
     else:
         return lambda x,t: 1.0
 
@@ -302,14 +299,14 @@ def clsvof_AFBC(x,flag):
 
 def vof_AFBC(x,flag):
     if flag == boundaryTags['top']:
-	return None
+        return None
     elif flag == boundaryTags['inflow']:
-	return None
+        return None
     elif flag == boundaryTags['outflow']:
-	return None
+        return None
     else:
         return lambda x,t: 0.0
-    
+
 def ncls_AFBC(x,flag):
     return None
 
@@ -319,8 +316,8 @@ def rdls_AFBC(x,flag):
 # DIFFUSIVE FLUX BCs #                                                                               
 def pressure_increment_DFBC(x,flag):
     if not (flag == boundaryTags['top'] and openTop):
-	return lambda x,t: 0.0
-            
+        return lambda x,t: 0.0
+
 ############################################
 # ***** Create myTwoPhaseFlowProblem ***** #
 ############################################
