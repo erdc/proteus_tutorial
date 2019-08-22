@@ -14,7 +14,7 @@ from proteus.mprans import SpatialTools as st
 # *************************** #
 opts= Context.Options([
     ('ns_model',1,"ns_model={0,1} for {rans2p,rans3p}"),
-    ("final_time",20.0,"Final time for simulation"),
+    ("final_time",10.0,"Final time for simulation"),
     ("dt_output",0.1,"Time interval to output solution"),
     ("gauges", True, "Collect data for validation"),
     ("cfl",0.9,"Desired CFL restriction"),
