@@ -124,6 +124,7 @@ vertices=[[0.0,0.0], #0
             [-opts.wave_length,0.], #11
             ]
          
+print(vertices)
 
 vertexFlags=np.array([1, #0 
                         1, #1 lower boundary abs zone generation outlet
