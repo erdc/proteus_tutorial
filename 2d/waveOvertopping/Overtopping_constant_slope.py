@@ -110,10 +110,6 @@ tank_dim = (3*wave_length+opts.structureCrestLevel*opts.structure_slope+opts.dep
 #shapes
 
 tank_sponge = (wave_length, 0)
-L_leftSpo  = tank_sponge[0]
-L_rightSpo = tank_sponge[1]
-
-
 
 boundaryOrientations = {'y-': np.array([0., -1.,0.]),
                         'x+': np.array([+1., 0.,0.]),
@@ -275,7 +271,6 @@ for bc in obstacle.BC_list:
 
 # -------- SET GENERATION AND ABSORPTION ZONES ------- #
 
-tank_sponge = tank_sponge
 dragAlpha = 5*(2*np.pi/opts.Tp)/1e-6
 left = True
 he=wave_length/opts.refinement_level

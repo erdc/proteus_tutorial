@@ -92,6 +92,21 @@ wave = wt.NewWave(Tp=opts.Tp,
 # --- Domain
 tank_dim = (3*opts.wave_length+opts.structureCrestLevel*opts.structure_slope+opts.deposit_width,opts.tank_height)
 
+# --- Boundary Conditions                                                                                                                                                                                          
+boundaryOrientations = {'y-': np.array([0., -1.,0.]),
+                        'x+': np.array([+1., 0.,0.]),
+                        'y+': np.array([0., +1.,0.]),
+                        'x-': np.array([-1., 0.,0.]),
+                        'sponge': None,
+                        'porousLayer': None,
+                       }
+
+boundaryTags = {'y-' : 1,
+                'x+' : 2,
+                'y+' : 3,
+                'x-' : 4,
+                'sponge' : 5,
+               }
 
 # --- Tank Outline Geometry
                      
@@ -161,7 +176,10 @@ segmentFlags=np.array([ 1, #[0,1]
 regions=[[5,0.3],[-0.5*opts.wave_length,0.3],[3*opts.wave_length+0.2+1+opts.structureCrestLevel*opts.structure_slope+2,0.4]]         
 regionFlags =np.array([1,2,3])        
 
-
+tank = st.CustomShape(domain, vertices=vertices, vertexFlags=vertexFlags,
+                      segments=segments, segmentFlags=segmentFlags,
+                      regions=regions, regionFlags=regionFlags,
+                      boundaryTags=boundaryTags, boundaryOrientations=boundaryOrientations)
 
 # --- Obstacle Geometry  
                       
@@ -215,37 +233,12 @@ obstacle = st.CustomShape(domain, vertices=obs_vertices, vertexFlags=obs_vertexF
                       boundaryTags=obs_boundaryTags, 
                       boundaryOrientations=obs_boundaryOrientations)
 
-
 obstacle.setHoles([[2*opts.wave_length, -0.2]])
-
 
 # --- Mesh Refinement
 he=opts.tank_sponge[0]/opts.refinement_level
 ecH=opts.ecH
 smoothing=ecH*he
-
-                          
-# --- Boundary Conditions
-boundaryOrientations = {'y-': np.array([0., -1.,0.]),
-                        'x+': np.array([+1., 0.,0.]),
-                        'y+': np.array([0., +1.,0.]),
-                        'x-': np.array([-1., 0.,0.]),
-                        'sponge': None,
-                        'porousLayer': None,
-                        'moving_porousLayer': None,
-                       }
-
-boundaryTags = {'y-' : 1,
-                'x+' : 2,
-                'y+' : 3,
-                'x-' : 4,
-                'sponge' : 5,
-               }
-
-tank = st.CustomShape(domain, vertices=vertices, vertexFlags=vertexFlags,
-                      segments=segments, segmentFlags=segmentFlags,
-                      regions=regions, regionFlags=regionFlags,
-                      boundaryTags=boundaryTags, boundaryOrientations=boundaryOrientations)
                
 # Tank
 tank.BC['y+'].setAtmosphere()
@@ -257,39 +250,31 @@ tank.BC['sponge'].setNonMaterial()
 for bc in obstacle.BC_list:
     bc.setFreeSlip()
 
-
-
-
 # --- Generation & Absorption Zones Setup  
 
 dragAlpha = 5*(2*np.pi/opts.Tp)/1e-6
 left = True
 he=opts.wave_length/opts.refinement_level
-tank.setGenerationZones(flags=2, epsFact_solid=opts.wave_length/2., center=(-opts.wave_length/2,0.35), orientation=(1.,0.,0.), waves=wave, dragAlpha=dragAlpha)
-tank.setAbsorptionZones(flags=3, epsFact_solid=opts.wave_length/2., center=(3*opts.wave_length+0.2+1+opts.structureCrestLevel*opts.structure_slope+2,0.4), orientation=(-1.,0.,0.), dragAlpha=dragAlpha)
+tank.setGenerationZones(flags=2,
+                        epsFact_solid=opts.wave_length/2.,
+                        center=(-opts.wave_length/2,0.35),
+                        orientation=(1.,0.,0.),
+                        waves=wave,
+                        dragAlpha=dragAlpha)
 
+tank.setAbsorptionZones(flags=3,
+                        epsFact_solid=opts.wave_length/2.,
+                        center=(3*opts.wave_length+0.2+1+opts.structureCrestLevel*opts.structure_slope+2,0.4),
+                        orientation=(-1.,0.,0.),
+                        dragAlpha=dragAlpha)
 
+domain.MeshOptions.he = he
+st.assembleDomain(domain)
 
 # --- Initial Conditions
 
-waterLine_x=opts.waterLine_x
-waterLine_z = opts.mwl
-
-
 def signedDistance(x):
-    phi_x = x[0]- waterLine_x
-    phi_y = x[1] - opts.mwl
-    if phi_x < 0.0:
-        if phi_y < 0.0:
-            return max(phi_x, phi_y)
-        else:
-            return phi_y
-    else:
-        if phi_y < 0.0:
-            return phi_x
-        else:
-            return np.sqrt(phi_x ** 2 + phi_y ** 2)
-
+    return x[1] - opts.mwl
 
 class P_IC:
     def __init__(self):
@@ -315,44 +300,36 @@ class LS_IC:
     def uOfXT(self,x,t):
         return signedDistance(x)
 
-initialConditions['vof'] = VOF_IC()
-initialConditions['ncls'] = LS_IC()
-initialConditions['rdls'] = LS_IC()
-
-
-
+initialConditions = {'pressure': P_IC(),
+                     'vel_u': AtRest(),
+                     'vel_v': AtRest(),
+                     'vel_w': AtRest(),
+                     'vof': VOF_IC(),
+                     'ncls': LS_IC(),
+                     'rdls': LS_IC(),}
+    
 # Two Phase Flow
 dt_output = opts.Tp/opts.Np
 
 outputStepping = TpFlow.OutputStepping(final_time=opts.Duration,
                                        dt_init=opts.dt_init,
-                                       # cfl=cfl,
                                        dt_output=dt_output,
                                        nDTout=None,
                                        dt_fixed=None)
 
-myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=None,
-                                             ls_model=None,
+myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=0,
+                                             ls_model=0,
                                              nd=domain.nd,
                                              cfl=opts.cfl,
                                              outputStepping=outputStepping,
-                                             structured=False,
                                              he=he,
-                                             nnx=None,
-                                             nny=None,
-                                             nnz=None,
                                              domain=domain,
                                              initialConditions=initialConditions,
-                                             boundaryConditions=None, # set with SpatialTools,
                                              )
 
 params = myTpFlowProblem.Parameters
 
 myTpFlowProblem.useSuperLu=False#True
-params.physical.densityA = opts.rho_0  # water
-params.physical.densityB = opts.rho_1  # air
-params.physical.kinematicViscosityA = opts.nu_0  # water
-params.physical.kinematicViscosityB = opts.nu_1  # air
 params.physical.surf_tension_coeff = opts.sigma_01
 
 # index in order of
@@ -366,16 +343,4 @@ m.mcorr.index = 4
 m.rdls.n.maxLineSearches=0
 m.rdls.n.maxNonlinearIts=50
 
-#Assemble domain
-domain.MeshOptions.he = he
-st.assembleDomain(domain)
 myTpFlowProblem.Parameters.Models.rans2p.auxiliaryVariables += domain.auxiliaryVariables['twp']
-
-
-
-##################################################################################
-
-
-
-
-
