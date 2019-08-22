@@ -13,13 +13,18 @@ import numpy as np
 # ***** GENERAL OPTIONS ***** #
 # *************************** #
 opts= Context.Options([
-    ("final_time",1.5,"Final time for simulation"),
+    ("final_time",2.5,"Final time for simulation"),
     ("dt_output",0.01,"Time interval to output solution"),
     ("cfl",0.9,"Desired CFL restriction"),
-    ("he",0.02,"he relative to Length of domain in x"),
+    ("he",0.1,"maximum element edge length"),
     ("x_tank",3.22,"extent of domain in x"),
     ("y_tank",1.8,"extent of domain in y")
     ])
+
+#Try adding these variables as Context options#
+waterLine_y = 0.6 #the extent of the water column in +y from 0
+waterLine_x = 1.2 #the extent of the water column in +x from 0
+
 
 # *************************** #
 # ***** DOMAIN AND MESH ***** #
@@ -49,15 +54,6 @@ class zero(object):
     def uOfXT(self,x,t):
         return 0.0
 
-waterLine_y = 0.6
-waterLine_x = 1.2
-class VF_IC:
-    def uOfXT(self, x, t):
-        if x[0] < waterLine_x and x[1] < waterLine_y:
-            return 0.0
-        else:
-            return 1.0
-
 class PHI_IC:
     def uOfXT(self, x, t):
         phi_x = x[0] - waterLine_x
@@ -72,6 +68,15 @@ class PHI_IC:
                 return phi_x
             else:
                 return (phi_x ** 2 + phi_y ** 2)**0.5
+
+
+class VF_IC:
+    def __init__(self):
+        self.phi=PHI_IC()
+    def uOfXT(self, x, t):
+        from proteus.ctransportCoefficients import smoothedHeaviside
+        return smoothedHeaviside(1.5*opts.he,self.phi.uOfXT(x,t))
+            
 
 #########################
 # ***** Numerics ****** #
