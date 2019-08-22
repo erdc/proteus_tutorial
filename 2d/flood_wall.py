@@ -14,15 +14,14 @@ from proteus.mprans import SpatialTools as st
 # *************************** #
 opts= Context.Options([
     ('ns_model',1,"ns_model={0,1} for {rans2p,rans3p}"),
-    ("final_time",7.5,"Final time for simulation"),
+    ("final_time",20.0,"Final time for simulation"),
     ("dt_output",0.1,"Time interval to output solution"),
     ("gauges", True, "Collect data for validation"),
-    ("cfl",0.2,"Desired CFL restriction"),
+    ("cfl",0.9,"Desired CFL restriction"),
     ("he",0.08,"Max mesh element diameter")
     ])
 
-waterLevel=0.75
-leeward_wl=0.25
+waterLevel=0.9
 pro_wl=0.5
 g=np.array([0.,-9.81,0.0])
 he=opts.he
@@ -48,9 +47,13 @@ vertices=[[0.0,0.0],#0
           [2.0,0.0],#1
           [2.1,1.0],#2
           [2.15,1.0],#3
-          [2.75,0.0],#4
-          [3.5,0.0],#5
-          [3.5,1.5],#6
+#          [2.75,0.0],#4
+#          [3.5,0.0],#5
+          [2.75 - 0.75*(2.75-2.15)/(1.0-0.0),0.75],#4
+#          [3.5,0.75],#5
+#          [3.5,1.5],#6
+          [3.,0.75],#5
+          [3.,1.5],#6
           [0.0,1.5],#7
 ]
 
@@ -101,8 +104,8 @@ tank = st.CustomShape(domain,
 # ***** BOUNDARY CONDITIONS ***** #
 # ******************************* #
 
-wave=wt.MonochromaticWaves(period=1.0,
-                           waveHeight=0.25,
+wave=wt.MonochromaticWaves(period=2.5,
+                           waveHeight=waterLevel/3.0,
                            mwl=waterLevel,
                            depth=waterLevel,
                            g=g,
