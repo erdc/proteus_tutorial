@@ -46,11 +46,11 @@ opts=Context.Options([
    # Caisson
     ("caisson2D", True, "Switch on/off caisson2D"),
     ("center", (0.5, 0.9),"Coord of the caisson center"),
-    ("dim",(0.3,0.3),"(X-dimension of the caisson2D,Y-dimension of the caisson2D"),
+    ("dim",(0.3,0.1),"(X-dimension of the caisson2D,Y-dimension of the caisson2D"),
     ('width', 0.9, 'Z-dimension of the caisson2D'),
-    ('mass', 30., 'Mass of the caisson2D [kg]'),#125
+    ('mass', 15., 'Mass of the caisson2D [kg]'),#125
     ('caisson_BC', 'FreeSlip', 'caisson2D boundaries: NoSlip or FreeSlip'),
-    ("free_x", np.array([0., 0.0, 0.0]), "Translational DOFs"),
+    ("free_x", np.array([0., 1.0, 0.0]), "Translational DOFs"),
     ("free_r", np.array([0., 0., 1.0]), "Rotational DOFs"),
     ("caisson_inertia", 0.236, "Inertia of the caisson 0.236, 1.04 [kg m2]"),
     ("rotation_angle", 0., "Initial rotation angle (in degrees)"),
@@ -149,7 +149,6 @@ for bc in caisson.BC_list:
         bc.setNoSlip()
     if opts.caisson_BC == 'FreeSlip':
         bc.setFreeSlip()
-    bc.setFixedNodes()
 
 ###################	Boundary Conditions	###################
 
@@ -261,9 +260,6 @@ domain.MeshOptions.he = opts.he
 st.assembleDomain(domain)
 
 myTpFlowProblem.Parameters.Models.rans2p.auxiliaryVariables += domain.auxiliaryVariables['twp']
+myTpFlowProblem.movingDomain = opts.movingDomain
 
 m.rans2p.auxiliaryVariables += [system]
-max_flag = max(domain.vertexFlags+domain.segmentFlags+domain.facetFlags)
-flags_rigidbody = np.zeros(max_flag+1, dtype='int32')
-for key in caisson.boundaryTags_global:
-    flags_rigidbody[caisson.boundaryTags_global[key]] = 1
