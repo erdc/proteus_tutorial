@@ -143,7 +143,7 @@ sod
 
 ~~~
 element = 'helium'
-print(len(helium))
+print(len(element))
 ~~~
 {: .python}
 
