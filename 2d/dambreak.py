@@ -51,12 +51,6 @@ class zero(object):
 
 waterLine_y = 0.6
 waterLine_x = 1.2
-class VF_IC:
-    def uOfXT(self, x, t):
-        if x[0] < waterLine_x and x[1] < waterLine_y:
-            return 0.0
-        else:
-            return 1.0
 
 class PHI_IC:
     def uOfXT(self, x, t):
@@ -73,6 +67,13 @@ class PHI_IC:
             else:
                 return (phi_x ** 2 + phi_y ** 2)**0.5
 
+class VF_IC:
+    def __init__(self):
+        self.phi = PHI_IC()
+    def uOfXT(self, x, t):
+        from proteus.ctransportCoefficients import smoothedHeaviside
+        return smoothedHeaviside(1.5*opts.he,self.phi.uOfXT(x,0.0))
+
 #########################
 # ***** Numerics ****** #
 #########################
@@ -87,12 +88,12 @@ domain.MeshOptions.triangleOptions = "VApq30Dena%8.8f" % ((opts.he ** 2)/2.0,)
 ############################################
 # ***** Create myTwoPhaseFlowProblem ***** #
 ############################################
-outputStepping = TpFlow.OutputStepping(opts.final_time,dt_output=opts.dt_output)
+outputStepping = TpFlow.OutputStepping(opts.final_time,dt_output=opts.dt_output,dt_init=0.0001)
 initialConditions = {'pressure': zero(),
                      'pressure_increment': zero(),
                      'vel_u': zero(),
                      'vel_v': zero(),
-                     'vof': VF_IC(),
+                     'vof':  VF_IC(),
                      'ncls': PHI_IC(),
                      'rdls': PHI_IC()}
 
