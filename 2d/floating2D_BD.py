@@ -242,3 +242,4 @@ m.rdls.index = 4
 m.mcorr.index = 5
 
 myTpFlowProblem.Parameters.Models.rans2p.auxiliaryVariables += domain.auxiliaryVariables['twp']
+myTpFlowProblem.movingDomain = opts.movingDomain

@@ -50,7 +50,7 @@ opts=Context.Options([
     ('width', 0.9, 'Z-dimension of the caisson2D'),
     ('mass', 15., 'Mass of the caisson2D [kg]'),#125
     ('caisson_BC', 'FreeSlip', 'caisson2D boundaries: NoSlip or FreeSlip'),
-    ("free_x", np.array([0., 0.0, 0.0]), "Translational DOFs"),
+    ("free_x", np.array([0., 0., 0.0]), "Translational DOFs"),
     ("free_r", np.array([0., 0., 1.0]), "Rotational DOFs"),
     ("caisson_inertia", 0.236, "Inertia of the caisson 0.236, 1.04 [kg m2]"),
     ("rotation_angle", 0., "Initial rotation angle (in degrees)"),
@@ -102,26 +102,7 @@ yc4 = yc3
 
 # --- Caisson2D Properties
 if opts.caisson2D:
-#     VCG = opts.dim[1]/2.
-#     volume = float(opts.dim[0]*opts.dim[1]*opts.width)
-#     density = float(opts.mass/volume)
-#     inertia = opts.caisson_inertia/opts.mass/opts.width
 
-# # --- Shape properties setup
-#     caisson = st.Rectangle(domain, dim=opts.dim, coords=opts.center)
-#     xc1, yc1 = caisson.vertices[0][0], caisson.vertices[0][1]
-#     xc2, yc2 = caisson.vertices[1][0], caisson.vertices[1][1]
-
-# # --- Body properties setup
-
-#     caisson2D = bd.CaissonBody(shape=caisson, substeps=40)
-#     caisson2D.setMass(mass=opts.mass)
-#     caisson2D.setConstraints(free_x=opts.free_x, free_r=opts.free_r)
-#     rotation = np.radians(opts.rotation_angle)
-#     caisson.rotate(rotation)
-#     caisson2D.It = inertia
-#     caisson2D.setNumericalScheme(scheme=opts.scheme)
-#     caisson2D.setRecordValues(filename='caisson2D', all_values=True)
     inertia = opts.caisson_inertia/opts.width
     caisson = st.Rectangle(domain, dim=opts.dim, coords=opts.center)  
     caisson.setHoles([[opts.center[0], opts.center[1]]])
@@ -185,10 +166,7 @@ tank.setAbsorptionZones(x_p=True, dragAlpha=dragAlpha)
 if opts.caisson2D:
     tank.setChildShape(caisson, 0)
 
-# --- Assemble Domain                                                                                                                                                                                                                                                 
-#domain.MeshOptions.he = opts.he
-#st.assembleDomain(domain)
-
+# --- Assemble Domain                                                                                                                                                                                          
 ###################	Initial Conditions	###################
 
 def signedDistance(x):
