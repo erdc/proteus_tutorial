@@ -107,7 +107,7 @@ keypoints:
 
 ## Proteus models are Python modules.
 
-*   In theis example the model is defined in the Python module "dambreak.py"
+*   In this example the model is defined in the Python module "dambreak.py"
 *   The ".py" extension lets everyone (including the operating system) know it is Python code.
 *   It's common to write Proteus models using a text editor, but we will also use the Jupyter Notebook.
 
