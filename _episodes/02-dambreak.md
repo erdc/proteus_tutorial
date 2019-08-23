@@ -36,7 +36,7 @@ keypoints:
 > ## Proteus naming conventions.
 >
 > *   Capitalized names represent types or classes (abstractions) of objects such as the RectangularDomain type.
-> *   Lowercase names reprsent concrete objects such as the ordered pair of the dimensions and the actual domain.
+> *   Lowercase names represent concrete objects such as the ordered pair of the dimensions and the actual domain.
 {: .callout}
 
 ## SpatialTools
@@ -140,7 +140,7 @@ keypoints:
 > > class PHI_IC:
 > > def uOfXT(self, x, t):
 > >     h = 0.5*tank_dim[1]*((0.5*tank_dim[0])**2 - (x[0] - 0.5*tank_dim[0])**2)
-> >     return h - x[1]
+> >     return x[1] - h 
 ~~~
 {: .python}
 > {: .solution}
