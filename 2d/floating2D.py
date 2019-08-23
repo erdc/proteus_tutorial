@@ -50,13 +50,12 @@ opts=Context.Options([
     ('width', 0.9, 'Z-dimension of the caisson2D'),
     ('mass', 15., 'Mass of the caisson2D [kg]'),#125
     ('caisson_BC', 'FreeSlip', 'caisson2D boundaries: NoSlip or FreeSlip'),
-    ("free_x", np.array([0., 1.0, 0.0]), "Translational DOFs"),
+    ("free_x", np.array([0., 0.0, 0.0]), "Translational DOFs"),
     ("free_r", np.array([0., 0., 1.0]), "Rotational DOFs"),
     ("caisson_inertia", 0.236, "Inertia of the caisson 0.236, 1.04 [kg m2]"),
     ("rotation_angle", 0., "Initial rotation angle (in degrees)"),
     ("Tn", 0.93, "Roll natural period"),
     ("chrono_dt", 0.00001, "chrono time step"),
-    ("caisson_inertia", 0.236, "Inertia of the caisson"),
     
     # Numerical Settings & Parameters
     ("he", 0.06,"maximum element edge length"),
@@ -263,3 +262,13 @@ myTpFlowProblem.Parameters.Models.rans2p.auxiliaryVariables += domain.auxiliaryV
 myTpFlowProblem.movingDomain = opts.movingDomain
 
 m.rans2p.auxiliaryVariables += [system]
+
+
+max_flag = max(domain.vertexFlags+domain.segmentFlags+domain.facetFlags)
+flags_rigidbody = np.zeros(max_flag+1, dtype='int32')
+for key in caisson.boundaryTags_global:
+    flags_rigidbody[caisson.boundaryTags_global[key]] = 1
+m.addedMass.index = 6
+m.addedMass.p.CoefficientsOptions.flags_rigidbody = flags_rigidbody
+m.addedMass.p.CoefficientsOptions.solve_rate = 1000.
+m.addedMass.auxiliaryVariables += [system.ProtChAddedMass]
