@@ -49,7 +49,7 @@ opts=Context.Options([
     ('width', 0.9, 'Z-dimension of the caisson2D'),
     ('mass', 30., 'Mass of the caisson2D [kg]'),#125
     ('caisson_BC', 'FreeSlip', 'caisson2D boundaries: NoSlip or FreeSlip'),
-    ("free_x", np.array([0., 0.0, 0.0]), "Translational DOFs"),
+    ("free_x", np.array([0., 1., 0.0]), "Translational DOFs"),
     ("free_r", np.array([0., 0., 1.0]), "Rotational DOFs"),
     ("caisson_inertia", 0.236, "Inertia of the caisson 0.236, 1.04 [kg m2]"),
     ("rotation_angle", 0., "Initial rotation angle (in degrees)"),

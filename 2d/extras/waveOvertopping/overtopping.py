@@ -51,6 +51,7 @@ opts=Context.Options([
     ("Nwaves", 15, "Number of waves per window"),
     ("Nfreq",32 , "Number of fourier components per window"),
     ("wave_length",5.,"used only define sponge length and tank dimensions"),
+    ("RandomWaves",True,"random wave generation"),
 
    # Numerical Options
     ("refinement_level", 150.,"he=wavelength/refinement_level"),
