@@ -22,7 +22,6 @@ opts= Context.Options([
     ("cfl",0.25,"Desired CFL restriction"),
     ("he",0.1,"he relative to Length of domain in x"),
     ("refinement",3,"level of refinement"),
-#    ("toe",35.0,"where toe begins from origin (m from x)"),
     ("slope",(1/19.85),"Beta, slope of incline (y/x)"),
     ("slope_length",50.0,"right extent of domain x(m)"),
     ("wl",1.0,"water level"),
@@ -32,9 +31,7 @@ opts= Context.Options([
     ("wave_type", 'solitaryWave', "type of wave"),
     ("fast", False, "switch for fast cosh calculations in WaveTools"),
     ("g", [0, -9.81, 0], "Gravity vector in m/s^2"),
-
     ])
-
 
 toe=(-opts.wl/opts.slope)+35#shifted
 structured=False
@@ -42,7 +39,6 @@ slope=opts.slope
 slope_x=opts.slope_length-toe
 slope_y=slope*slope_x
 top=(slope_y)*1.35
-#toe=opts.toe
 he=opts.he
 nnx=nny=nnz=None
 wl=opts.wl
@@ -64,9 +60,6 @@ if opts.waves is True:
 				trans = np.array([x0, 0., 0.]),
                        		fast = opts.fast
 			  )
-# ****************** #
-# ***** GAUGES ***** #
-# ****************** #
 
 # *************************** #
 # ***** DOMAIN AND MESH ***** #
@@ -74,7 +67,6 @@ if opts.waves is True:
 domain = Domain.PlanarStraightLineGraphDomain()
 nLevels = 1
  
-#parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
 nLayersOfOverlapForParallel = 0
 
 boundaries=['left','right','bottom','slope','top']
@@ -90,7 +82,6 @@ vertices=[[0.0,0.0],#0
           [toe,0.0],#1                                                                        
           [opts.slope_length,slope_y],#2                                    
           [opts.slope_length,top],#3  
-#         [toe+slope_x,top],#3                             
           [0.0,top]]#4
 
 vertexFlags=[boundaryTags['left'],
@@ -120,13 +111,6 @@ tank = st.CustomShape(domain, vertices=vertices, vertexFlags=vertexFlags,
                       regions=regions, regionFlags=regionFlags,
                       boundaryTags=boundaryTags, boundaryOrientations=boundaryOrientations)
 
-
-##############################
-
-#domain
-
-#############################
-
 # ****************************** #
 # ***** INITIAL CONDITIONS ***** #
 # ****************************** #
@@ -136,24 +120,16 @@ class zero(object):
 
 class clsvof_init_cond(object):
     def uOfXT(self,x,t):
-#        return x[1]-wl
         return x[1] - (wave.eta(x,0) + opts.wl)    
-        # if x[0] < waterLine_x and x[1] < waterLine_y: 
-        #     return -1.0
-        # elif x[0] > waterLine_x or x[1] > waterLine_y: 
-        #     return 1.0
-        # else:
-        #     return 0.0        
 
 epsFact_consrv_heaviside=3.0
 wavec =  np.sqrt(9.81 * (depth+opts.wave_height))
+
 def weight(x,t):
     return 1.0-smoothedHeaviside(epsFact_consrv_heaviside*opts.he,
-                                 #-ct.epsFact_consrv_heaviside*ct.opts.he+
                                  (x[1] - (max(wave.eta(x, t%(toe/wavec)),
                                  wave.eta(x+toe, t%(toe/wavec)))
                                              +opts.wl)))
-
         
 class vel_u(object):
     def uOfXT(self, x, t):
@@ -168,6 +144,7 @@ class vel_v(object):
             return weight(x,t)*wave.u(x,t)[1]
         else:
             return 0.0
+
 # ****************************** #
 # ***** Boundary CONDITIONS***** #
 # ****************************** #                                                                  
@@ -186,7 +163,9 @@ domain.MeshOptions.triangleOptions = "VApq30Dena%8.8f" % (old_div((he ** 2), 2.0
 ############################################
 # ***** Create myTwoPhaseFlowProblem ***** #
 ############################################
+
 outputStepping = TpFlow.OutputStepping(opts.final_time,dt_output=opts.dt_output)
+
 initialConditions = {'pressure': zero(),
                      'pressure_increment': zero(),
                      'vel_u': vel_u(),
@@ -215,22 +194,15 @@ boundaryConditions = {
     'vel_w_DFBC': lambda x, flag: domain.bc[flag].w_diffusive.init_cython(),
     'clsvof_DFBC': lambda x, flag: None}
 
-# auxVariables={'clsvof': [height_gauges],
-#               'pressure': [pressure_gauges]}
-
 myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=1,
                                              nd=2,
                                              cfl=opts.cfl,
                                              outputStepping=outputStepping,
                                              structured=structured,
                                              he=he,
-                                             nnx=nnx,
-                                             nny=nny,
-                                             nnz=None,
                                              domain=domain,
                                              initialConditions=initialConditions,
                                              boundaryConditions=boundaryConditions,
-#                                             auxVariables=auxVariables,
                                              useSuperlu=False)
 physical_parameters = myTpFlowProblem.physical_parameters
 myTpFlowProblem.clsvof_parameters['disc_ICs']=False

@@ -27,9 +27,9 @@ opts= Context.Options([
     ("dt_fixed", 0.01, "Fixed time step in s"),
     ("dt_init", 0.001 ,"Maximum initial time step in s"),
     ("flowrate",0.5,"unit flowrate for 2d (assuming thickness of 1m)"), 
-    ("slope",0.0,"slope of tilting flume"),
-    ("flume_length",1.223,"length of flume downstream of flow constriction in m"),
-    ("flume_height",0.6096,"height of flume in m")
+    ("slope",0.01,"slope of tilting flume"),
+    ("flume_length",7.,"length of flume downstream of flow constriction in m"),
+    ("flume_height",.7,"height of flume in m")
     ])
 
 he=opts.he
@@ -152,8 +152,6 @@ domain = Domain.PlanarStraightLineGraphDomain(vertices=vertices,
                                               segmentFlags=segmentFlags,
                                               regions = regions,
                                               regionFlags = regionFlags,)
-#                                              regionConstraints=regionConstraints)
-#                                             holes=holes)                                                                                       
 
 domain.MeshOptions.setParallelPartitioningType('node')
 domain.boundaryTags = boundaryTags                                                                            
@@ -363,13 +361,9 @@ myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=0,
                                              cfl=opts.cfl,
                                              outputStepping=outputStepping,
                                              he=he,
-#                                             nnx=nnx,
-#                                             nny=nny,
-#                                             nnz=None,
                                              domain=domain,
                                              initialConditions=initialConditions,
                                              boundaryConditions=boundaryConditions,
-#                                             auxVariables=auxVariables,
                                              useSuperlu=False)
 physical_parameters = myTpFlowProblem.physical_parameters
 myTpFlowProblem.clsvof_parameters['disc_ICs']=False
