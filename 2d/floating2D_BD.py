@@ -28,7 +28,7 @@ opts=Context.Options([
 
     # Tank Geometry
     ("water_level", 0.9,"Height of free surface above bottom"),
-    ("tank_dim", (1., 1.2,), "Dimensions of the tank"),
+    ("tank_dim", (1., 1.5,), "Dimensions of the tank"),
     ("tank_sponge", (1., 1.), "Length of relaxation zones (front/back, left/right)"),
     ("tank_BC",'FreeSlip', "tank boundary conditions: NoSlip or FreeSlip"),
 
@@ -45,11 +45,11 @@ opts=Context.Options([
    # Caisson
     ("caisson2D", True, "Switch on/off caisson2D"),
     ("center", (0.5, 0.9),"Coord of the caisson center"),
-    ("dim",(0.3,0.1),"(X-dimension of the caisson2D,Y-dimension of the caisson2D"),
+    ("dim",(0.3,0.3),"(X-dimension of the caisson2D,Y-dimension of the caisson2D"),
     ('width', 0.9, 'Z-dimension of the caisson2D'),
-    ('mass', 125., 'Mass of the caisson2D [kg]'),#125
+    ('mass', 30., 'Mass of the caisson2D [kg]'),#125
     ('caisson_BC', 'FreeSlip', 'caisson2D boundaries: NoSlip or FreeSlip'),
-    ("free_x", np.array([0., 0.0, 0.0]), "Translational DOFs"),
+    ("free_x", np.array([0., 1., 0.0]), "Translational DOFs"),
     ("free_r", np.array([0., 0., 1.0]), "Rotational DOFs"),
     ("caisson_inertia", 0.236, "Inertia of the caisson 0.236, 1.04 [kg m2]"),
     ("rotation_angle", 0., "Initial rotation angle (in degrees)"),
@@ -242,3 +242,4 @@ m.rdls.index = 4
 m.mcorr.index = 5
 
 myTpFlowProblem.Parameters.Models.rans2p.auxiliaryVariables += domain.auxiliaryVariables['twp']
+myTpFlowProblem.movingDomain = opts.movingDomain
