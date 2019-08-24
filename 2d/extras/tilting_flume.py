@@ -19,7 +19,6 @@ opts= Context.Options([
     ("final_time",5.0,"Final time for simulation"),
     ("dt_output",0.01,"Time interval to output solution"),
     ("cfl",0.25,"Desired CFL restriction"),
-    ("he",0.01,"he relative to Length of domain in x"),
     ("waterLevel", 0.9,"Height of water column in m"),
     ("tailwater", 0.9,"Height of water column in m"),
     ("g",(0,-9.81,0), "Gravity vector in m/s^2"),
@@ -28,11 +27,16 @@ opts= Context.Options([
     ("dt_fixed", 0.01, "Fixed time step in s"),
     ("dt_init", 0.001 ,"Maximum initial time step in s"),
     ("flowrate",0.5,"unit flowrate for 2d (assuming thickness of 1m)"), 
-    ("slope",0.0,"slope of tilting flume"),
-    ("flume_length",1.223,"length of flume downstream of flow constriction in m"),
-    ("flume_height",0.6096,"height of flume in m")
+    ("slope",0.01,"slope of tilting flume"),
+    ("flume_length",7.,"length of flume downstream of flow constriction in m"),
+    ("flume_height",.7,"height of flume in m")
     ])
 
+he=opts.he
+slope=opts.slope
+waterLevel=opts.waterLevel
+tailwater=opts.tailwater
+qu=opts.flowrate
 
 # ----- PHYSICAL PROPERTIES ----- #                                                                 
 # Water                                                                                             
@@ -46,20 +50,11 @@ sigma_01 = 0.0
 # Gravity                                                                                           
 g = opts.g
 
-
-
-he = opts.he
-slope_=opts.slope
-tailwater=opts.tailwater
-
-# ****************** #
-# ***** GAUGES ***** #
-# ****************** #
-
 # *************************** #
 # ***** DOMAIN AND MESH ***** #
 # ****************** #******* #
 
+#Function to tilt vertices:
 def tilt(vertices, slope):
     verts=vertices
     global theta
@@ -86,14 +81,13 @@ def tilt(vertices, slope):
 ##Upstream basin                                                                                    
 straight = 0.28617+0.4572+2.12175
 straightpoints = 40
-spacing = straight/straightpoints #meters                                                       
-spacing = spacing*1000 #mm                                                                      
+spacing = 1000*straight/straightpoints #mm
 vertices = [[-(0.28617+0.4572),0]]
 for i in range(straightpoints):
     newx = -(0.28617+0.4572)+spacing*(i+1)/1000
     vertices.append([newx,0])
 
- ##Concave up portion of flow acceleration                                                          
+##Concave up portion of flow acceleration                                                          
 numvertices = 20
 LX1 = 1.400
 straightend = vertices[len(vertices)-1][0]
@@ -103,37 +97,28 @@ for i in range(numvertices):
     newz = a*(((newx-straightend)*1000)**3)/1000
     vertices.append([newx,newz])
 
-0.6096 ##Concave down portion of flow acceleration                                                        
+##Concave down portion of flow acceleration                                                        
 for i in range(numvertices):
     newx = straightend+LX1+(i+1)*(LX1/(numvertices))
-    a = 1.1507*(10**-7)
     newz = 0.63152-a*(((2.8-(newx-straightend))*1000)**3)/1000
     vertices.append([newx,newz])
 
- ##Test section                                                                                     
+##Test section                                                                                     
 begindsstraight = vertices[len(vertices)-1][0]
 endx = begindsstraight + opts.flume_length
-#endx = 7.61831-0.4572
-straightpoints = 40
-spacing = (endx - begindsstraight)/straightpoints #meters                                       
-spacing = spacing*1000 #mm                                                                      
+spacing =1000*(endx - begindsstraight)/straightpoints #mm
 for i in range(straightpoints):
     newx = begindsstraight+spacing*(i+1)/1000
     vertices.append([newx,0.63152])
-        
- ##Top Boundary
 
+##Top Boundary
 vertices.append([endx,0.63152+opts.flume_height])
-#vertices.append([endx,0.63152+0.6096])
 vertices.append([-(0.28617+0.4572),0.63152+opts.flume_height]) 
-#vertices.append([-(0.28617+0.4572),0.63152+0.6096])
 
-#Tilt?
+#Apply Tilt:
+vertices = tilt(vertices, slope)
 
-vertices = tilt(vertices, slope_)
-
-#VertexFlags
-                                                                                                    
+#VertexFlags                                                                                                    
 boundaries=['left','outflow','bottom','top']
 boundaryTags=dict([[key,i+1] for [i,key] in enumerate(boundaries)])
 vertexFlags=[boundaryTags['left']]
@@ -144,15 +129,12 @@ vertexFlags.append(boundaryTags['top'])
 vertexFlags.append(boundaryTags['top'])
 
 #Segments
-
 segments = [[0,1]]
 for i in range(len(vertices)-2):
     segments.append([i+1,i+2])
 segments.append((len(vertices)-1,0))
 
-
 #SegmentFlags
-
 segmentFlags=[boundaryTags['bottom']]
 for i in range(len(segments)-4):
     segmentFlags.append(boundaryTags['bottom'])
@@ -160,6 +142,7 @@ segmentFlags.append(boundaryTags['outflow'])
 segmentFlags.append(boundaryTags['top'])
 segmentFlags.append(boundaryTags['left'])
 
+#RegionFlags
 regions=[[0.5,0.5]]
 regionFlags=[1]
 
@@ -169,24 +152,15 @@ domain = Domain.PlanarStraightLineGraphDomain(vertices=vertices,
                                               segmentFlags=segmentFlags,
                                               regions = regions,
                                               regionFlags = regionFlags,)
-#                                              regionConstraints=regionConstraints)
-#                                             holes=holes)                                        
-
-he = opts.he                                                                                       
 
 domain.MeshOptions.setParallelPartitioningType('node')
-domain.boundaryTags = boundaryTags
-#domain.readPoly("mesh")                                                                            
+domain.boundaryTags = boundaryTags                                                                            
 domain.writePoly("mesh")
 domain.writePLY("mesh")
 domain.writeAsymptote("mesh")
 triangleOptions = "VApq30Dena%8.8f" % ((he**2)/2.0,)                                               
-logEvent("""Mesh generated using: tetgen -%s %s"""  % (triangleOptions,domain.polyfile+".poly"))
-#proteus.MeshTools.                                                                                 
+logEvent("""Mesh generated using: tetgen -%s %s"""  % (triangleOptions,domain.polyfile+".poly"))                                                                  
 domain.MeshOptions.triangleOptions=triangleOptions
-
-#tailwater=opts.tailwater+vertices[len(vertices)-3][1]
-waterLevel= opts.waterLevel
 bottom=min(vertices, key=lambda x: x[1])[1]
 topy=max(vertices, key=lambda x: x[1])[1]
 
@@ -199,18 +173,14 @@ def signedDistance(X):
     y=X[1]
     return y-waterLevel
 
-
-qu=opts.flowrate
 u = qu*np.sin(theta)
 v = qu*np.cos(theta)
 
 epsFact_consrv_heaviside=3.0    
 def twpflowVelocity_u(X,t):
-   waterspeed = u
-   H = smoothedHeaviside(epsFact_consrv_heaviside*he,X[1]-waterLevel)
-   return (1.0-H)*waterspeed
-
-#u=opts.flowrate/(waterLevel-vertices[0][1])                                                  
+    waterspeed = u
+    H = smoothedHeaviside(epsFact_consrv_heaviside*he,X[1]-waterLevel)
+    return (1.0-H)*waterspeed
 
 def twpflowVelocity_u_flux(X,t):
     waterspeed = u
@@ -237,7 +207,6 @@ def outtwpflowPressure(X,t):
                           -
                           smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
 
-
 def inbcVF(X,t):
     return smoothedHeaviside(epsFact_consrv_heaviside*he, X[1] - waterLevel)
 
@@ -250,12 +219,8 @@ def outbcVF(X,t):
 def outbcPhi(X,t):
     return X[1] - tailwater
 
-#v=opts.flowrate                                                                                    
-vf=-v
-#Tilt for inflow from bottom?                                                                       
-                                                                                                    
-c = tilt([[0,0]], slope_)
-
+#Apply tilt to inflow from bottom                                                                       
+c = tilt([[0,0]], slope)
 def inflow_(X):
     r = 0.381
     if ((X[0]-c[0][0])**2+(X[1]-c[0][1])**2)**0.5 < r:
@@ -266,6 +231,7 @@ def inflow_(X):
 # ****************************** #
 # ***** INITIAL CONDITIONS ***** #
 # ****************************** #
+
 class zero(object):
     def uOfXT(self,x,t):
         return 0.0
@@ -281,6 +247,7 @@ class PHI_IC:
 # ******************************* #                                                                 
 # ***** BOUNDARY CONDITIONS ***** #                                                                 
 # ******************************* #                                                                 
+
 non_slip_BCs=True
 openTop=True
 # DIRICHLET BOUNDARY CONDITIONS #                                                                   
@@ -324,7 +291,6 @@ def ncls_DBC(x,flag):
 def rdls_DBC(x, flag):
     pass
 
-
 # ADVECTIVE FLUX BOUNDARY CONDITIONS #                                                              
 def vel_u_AFBC(x,flag):
     return None
@@ -355,8 +321,6 @@ def ncls_AFBC(x,flag):
 def rdls_AFBC(x,flag):
     return None
 
-# DIFFUSIVE FLUX BCs #
-
 
 ############################################
 # ***** Create myTwoPhaseFlowProblem ***** #
@@ -374,7 +338,6 @@ boundaryConditions = {
     'pressure_DBC': pressure_DBC,
     'vel_u_DBC': vel_u_DBC,
     'vel_v_DBC': vel_v_DBC,
-#    'vel_w_DBC': vel_w_DBC,
     'vof_DBC': vof_DBC,
     'ncls_DBC': ncls_DBC,
     'rdls_DBC':rdls_DBC,
@@ -382,14 +345,12 @@ boundaryConditions = {
     'pressure_AFBC': pressure_AFBC,
     'vel_u_AFBC': vel_u_AFBC,
     'vel_v_AFBC': vel_v_AFBC,
-#    'vel_w_AFBC': vel_w_AFBC,
     'vof_AFBC': vof_AFBC,
     'ncls_AFBC': ncls_AFBC,
     'rdls_AFBC': rdls_AFBC,
     # DIFFUSIVE FLUX BCs #                                                                          
     'vel_u_DFBC': lambda x, flag: lambda x,t: 0.0,
     'vel_v_DFBC': lambda x, flag: lambda x,t: 0.0,
-#    'vel_w_DFBC': lambda x, flag: lambda x,t: 0.0,
     'vof_DFBC': lambda x, flag: None,
     'ncls_DFBC': lambda x, flag: None,
     'rdls_DFBC': lambda x, flag: None,}
@@ -400,13 +361,9 @@ myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=0,
                                              cfl=opts.cfl,
                                              outputStepping=outputStepping,
                                              he=he,
-#                                             nnx=nnx,
-#                                             nny=nny,
-#                                             nnz=None,
                                              domain=domain,
                                              initialConditions=initialConditions,
                                              boundaryConditions=boundaryConditions,
-#                                             auxVariables=auxVariables,
                                              useSuperlu=False)
 physical_parameters = myTpFlowProblem.physical_parameters
 myTpFlowProblem.clsvof_parameters['disc_ICs']=False

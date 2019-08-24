@@ -21,6 +21,11 @@ opts= Context.Options([
     ("y_tank",1.8,"extent of domain in y")
     ])
 
+#Try adding these variables as Context options#
+waterLine_y = 0.6 #the extent of the water column in +y from 0
+waterLine_x = 1.2 #the extent of the water column in +x from 0
+
+
 # *************************** #
 # ***** DOMAIN AND MESH ***** #
 # ****************** #******* #
