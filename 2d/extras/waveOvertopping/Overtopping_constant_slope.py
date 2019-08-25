@@ -102,7 +102,7 @@ wave = wt.RandomWavesFast(Tstart=opts.Tstart,
 
 # Script on wave length
 wave_length=wave.wavelength           
-
+print(wave_length)
 # Domain
 
 tank_dim = (3*wave_length+opts.structureCrestLevel*opts.structure_slope+opts.deposit_width,opts.structureCrestLevel+0.2)
@@ -174,7 +174,7 @@ segments=[[0,1],
               ]
 
 segmentFlags=np.array([ 1, #[0,1] 
-                        4, #[1,2] 
+                        1,#4, #[1,2] 
                         1, #[2,3]
                         2, #[3,4]
                         1, #[4,5]

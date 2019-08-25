@@ -149,8 +149,8 @@ class zero(object):
         return 0.
 
 def signedDistance(x):
-    a = ((x[0]-19)**2+(x[1]-4.5)**2)**0.5
-    b = ((x[0]-19)**2+(x[1]+4.5)**2)**0.5
+    a = ((x[0]-19.5)**2+(x[1]-4.5)**2)**0.5
+    b = ((x[0]-19.5)**2+(x[1]+4.5)**2)**0.5
 
     if x[0]>18.0:
         return x[2] - pro_wl
@@ -167,13 +167,6 @@ class VF_IC:
 class PHI_IC:
     def uOfXT(self, x, t):
         return signedDistance(x)
-
-
-# ******************************* #
-# ***** BOUNDARY CONDITIONS ***** #
-# ******************************* #
-    
-# ADVECTIVE FLUX BOUNDARY CONDITIONS #
     
 ############################################
 # ***** Create myTwoPhaseFlowProblem ***** #
@@ -193,14 +186,8 @@ myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=0,
                                              nd=3,
                                              cfl=opts.cfl,
                                              outputStepping=outputStepping,
-                                             structured=False,
                                              he=he,
-                                             nnx=None,
-                                             nny=None,
-                                             nnz=None,
                                              domain=domain,
                                              initialConditions=initialConditions,
-                                             boundaryConditions=None,
-                                             auxVariables=None,
                                              useSuperlu=False)
 myTpFlowProblem.Parameters.physical.gravity = [0., 0., -9.81]
