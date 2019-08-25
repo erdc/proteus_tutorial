@@ -1,7 +1,7 @@
 #!/bin/bash
-#PBS -A ERDCV00898R40
-#PBS -l walltime=002:00:00
-#PBS -l select=1:ncpus=44:mpiprocs=44
+#PBS -A MHPCC96640PDP
+#PBS -l walltime=003:00:00
+#PBS -l select=1:ncpus=32:mpiprocs=32
 #PBS -l place=scatter:excl
 #PBS -q standard
 #PBS -N dambreak
