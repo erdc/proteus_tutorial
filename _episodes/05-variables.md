@@ -70,7 +70,7 @@ Ahmed is 42 years old
 
 ## Variables must be created before they are used.
 
-*   If a variable doesn't exist yet, or if the name has been mis-spelled,
+*   If a variable doesn't exist yet, or if the name has been misspelled,
     Python reports an error.
     *   Unlike some languages, which "guess" a default value.
 
@@ -149,8 +149,6 @@ print(len(element))
 
 *   Nested functions are evaluated from the inside out,
     just like in mathematics.
-
-FIXME: need to introduce slices
 
 ## Python is case-sensitive.
 

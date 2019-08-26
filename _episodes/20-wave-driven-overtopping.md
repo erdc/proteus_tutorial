@@ -8,7 +8,5 @@ questions:
 - "How do I absorb waves?"
 - "How do I ensure accurate results?"
 keypoints:
-- "We are constantly seeking to improve this course."
+- "`SpatialTools` simplifies adding generation and absorption zones."
 ---
-
-Gather feedback from participants.

@@ -8,9 +8,7 @@ questions:
 - "What sort of turbulence modeling approaches are available?"
 - "What numerical parameters affect accuracy and robustness of calculations?"
 objectives:
-- "Gather feedback on the class"
+- "Show how `proteus.mprans.BoundaryConditions` can model inflow and tailwater conditions."
 keypoints:
-- "We are constantly seeking to improve this course."
+- "Both upstream and downstream boundaries can suffer from instabilities"
 ---
-
-Gather feedback from participants.

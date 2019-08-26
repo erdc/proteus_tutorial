@@ -6,173 +6,122 @@ questions:
 - "How do I add obstacles to the model domain?"
 - "How do I generate waves?"
 objectives:
-- "Provide sound justifications for basic rules of coding style."
-- "Refactor one-page programs to make them more readable and justify the changes."
-- "Use Python community coding standards (PEP-8)."
+- "Provide some approaches for adding structure to the domain using `proteus.SpatialTools`."
+- "Summarize the library of wave generation functions in `proteus.WaveTools`."
+- "Show how to run in parallel on HPC machines."
 keypoints:
-- "Follow standard Python style in your code."
-- "Use docstrings to provide online help."
+- "`SpatialTools` support composition of the domain from smaller/simpler parts."
+- "`WaveTools` contains most common wave generation needs (linear, nonlinear, random)."
+- "Running in parallel requires setting up the HPC environment in a PBS script but is otherwise the same as running in serial."
 ---
-## Follow standard Python style in your code.
+## Geometry of the `floodwall.py` problem
 
-*   [PEP8](https://www.python.org/dev/peps/pep-0008):
-    a style guide for Python that discusses topics such as how you should name variables,
-    how you should use indentation in your code,
-    how you should structure your `import` statements,
-    etc.
-    Adhering to PEP8 makes it easier for other Python developers to read and understand your code,
-    and to understand what their contributions should look like.
-    The [PEP8 application and Python library](https://pypi.python.org/pypi/pep8)
-    can check your code for compliance with PEP8.
-
-## Use assertions to check for internal errors.
-
-FIXME
-
-## Use docstrings to provide online help.
-
-*   If the first thing in a function is a character string
-    that is not assigned to a variable,
-    Python attaches it to the function as the online help.
-*   Called a *docstring* (short for "documentation string").
+*   The example adds a wall structure to a rectangular tank.
+*   
 
 ~~~
-def average(values):
-    "Return average of values, or None if no values are supplied."
+domain = Domain.PlanarStraightLineGraphDomain()
 
-    if len(values) == 0:
-        return None
-    return sum(values) / average(values)
+boundaries=['gate','left','right','bottom','top']
+boundaryTags=dict([(key,i+1) for (i,key) in enumerate(boundaries)])
 
-help(average)
+vertices=[[0.0,0.0],#0
+          [2.0,0.0],#1
+          [2.1,1.0],#2
+          [2.15,1.0],#3
+          [2.75 - 0.75*(2.75-2.15)/(1.0-0.0),0.75],#4
+          [3.,0.75],#5
+          [3.,1.5],#6
+          [0.0,1.5],#7
+]
+
+vertexFlags=[boundaryTags['bottom'],
+             boundaryTags['gate'],
+             boundaryTags['gate'],
+             boundaryTags['gate'],
+             boundaryTags['gate'],
+             boundaryTags['bottom'],
+             boundaryTags['top'],
+             boundaryTags['top'],
+             ]
+
+segments=[[0,1],
+          [1,2],
+          [2,3],
+          [3,4],
+          [4,5],
+          [5,6],
+          [6,7],
+          [7,0]]
+
+segmentFlags=[boundaryTags['bottom'],
+              boundaryTags['gate'],
+              boundaryTags['gate'],
+              boundaryTags['gate'],
+              boundaryTags['bottom'],
+              boundaryTags['right'],
+              boundaryTags['top'],
+              boundaryTags['left']]
+
+regions=[[0.1,0.1]]
+regionFlags=[1]
+
+tank = st.CustomShape(domain,
+                      vertices=vertices,
+                      vertexFlags=vertexFlags,
+                      segments=segments,
+                      segmentFlags=segmentFlags,
+                      regions = regions,
+                      regionFlags = regionFlags,
+                      boundaryTags=boundaryTags,
+                      boundaryOrientations=boundaryOrientations)
 ~~~
 {: .python}
+
+## Boundary conditions using `proteus.WaveTools`
+
+
 ~~~
-Help on function average in module __main__:
-
-average(values)
-    Return average of values, or None if no values are supplied.
+wave=wt.MonochromaticWaves(period=2.5,
+                           waveHeight=waterLevel/3.0,
+                           mwl=waterLevel,
+                           depth=waterLevel,
+                           g=g,
+                           waveDir=np.array([1.,0.,0.]))
+tank.BC['left'].setUnsteadyTwoPhaseVelocityInlet(wave, smoothing=1.5*he)
+tank.BC['bottom'].setFreeSlip()
+tank.BC['gate'].setFreeSlip()
+tank.BC['right'].setFreeSlip()
+tank.BC['top'].setAtmosphere()
 ~~~
-{: .output}
+{: .python}
 
-> ## Multiline Strings
->
-> Often use *multiline strings* for documentation.
-> These start and end with three quote characters (either single or double)
-> and end with three matching characters.
->
-> ~~~
-> """This string spans
-> multiple lines.
->
-> Blank lines are allowed."""
-> ~~~
-> {: .python}
-{: .callout}
+## PBS Script for Onyx
 
-> ## What Will Be Shown?
->
-> Highlight the lines in the code below that will be available as online help.
-> Are there lines that should be made available, but won't be?
-> Will any lines produce a syntax error or a runtime error?
->
-> ~~~
-> "Find maximum edit distance between multiple sequences."
-> # This finds the maximum distance between all sequences.
->
-> def overall_max(sequences):
->     '''Determine overall maximum edit distance.'''
->
->     highest = 0
->     for left in sequences:
->         for right in sequences:
->             '''Avoid checking sequence against itself.'''
->             if left != right:
->                 this = edit_distance(left, right)
->                 highest = max(highest, this)
->
->     # Report.
->     return highest
-> ~~~
-> {: .source}
-{: .challenge}
-
-> ## Document This
->
-> Turn the comment on the following function into a docstring
-> and check that `help` displays it properly.
->
-> ~~~
-> def middle(a, b, c):
->     # Return the middle value of three.
->     # Assumes the values can actually be compared.
->     values = [a, b, c]
->     values.sort()
->     return values[1]
-> ~~~
-> {: .source}
-{: .challenge}
-
-> ## Clean Up This Code
->
-> 1. Read this short program and try to predict what it does.
-> 2. Run it: how accurate was your prediction?
-> 3. Refactor the program to make it more readable.
->    Remember to run it after each change to ensure its behavior hasn't changed.
-> 4. Compare your rewrite with your neighbor's.
->    What did you do the same?
->    What did you do differently, and why?
->
-> ~~~
-> import sys
-> n = int(sys.argv[1])
-> s = sys.argv[2]
-> print(s)
-> i = 0
-> while i < n:
->     # print('at', j)
->     new = ''
->     for j in range(len(s)):
->         left = j-1
->         right = (j+1)%len(s)
->         if s[left]==s[right]: new += '-'
->         else: new += '*'
->     s=''.join(new)
->     print(s)
->     i += 1
-> ~~~
-> {: .source}
->
-> > ## Solution
-> >
-> > Here's one solution.
-> >
-> > ~~~
-> > def string_machine(input_string, iterations):
-> >     """
-> >     Takes input_string and generates a new string with -'s and *'s
-> >     corresponding to characters that have identical adjacent characters
-> >     or not, respectively.  Iterates through this procedure with the resultant
-> >     strings for the supplied number of iterations.
-> >     """
-> >     print(input_string)
-> >     old = input_string
-> >     for i in range(iterations):
-> >         new = ''
-> >         # iterate through characters in previous string
-> >         for j in range(len(s)):
-> >             left = j-1
-> >             right = (j+1)%len(s) # ensure right index wraps around
-> >             if old[left]==old[right]:
-> >                 new += '-'
-> >             else:
-> >                 new += '*'
-> >         print(new)
-> >         # store new string as old
-> >         old = new
-> >
-> > string_machine('et cetera', 10)
-> > ~~~
-> > {: .python}
-> {: .solution}
-{: .challenge}
+~~~
+#!/bin/bash
+#PBS -A ERDCV00898R40
+#PBS -l walltime=001:00:00
+#PBS -l select=1:ncpus=44:mpiprocs=44
+#PBS -l place=scatter:excl
+#PBS -q debug
+#PBS -N dambreak
+#PBS -j oe
+#PBS -l application=proteus
+#PBS -m eba
+##PBS -M myemail@mydomain
+#setup modules and check proteus version
+. ${MODULESHOME}/etc/modules.sh
+export MODULEPATH=${PROJECTS_HOME}/proteus/modulefiles:${MODULEPATH}
+module load proteus/1.7.0
+which parun
+#create a working directory and copy over the inputs use
+cd $PBS_O_WORKDIR
+mkdir $WORKDIR/$PBS_JOBNAME.$PBS_JOBID
+cp dambreak.py $WORKDIR/$PBS_JOBNAME.$PBS_JOBID
+cp dambreak.pbs $WORKDIR/$PBS_JOBNAME.$PBS_JOBID
+#change into the work directory and run
+cd  $WORKDIR/$PBS_JOBNAME.$PBS_JOBID
+aprun -n ${BC_MPI_TASKS_ALLOC}  parun -l 5 --TwoPhaseFlow dambreak.py -C "he=0.0125"
+~~~
+{: .bash}

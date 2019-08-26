@@ -7,9 +7,9 @@ questions:
 - "What are the on-going and future research topics driving Proteus?"
 - "What will Proteus 2.0 look like?"
 objectives:
-- "Gather feedback on the class"
+- "Provide a clear idea where Proteus development is headed."
 keypoints:
-- "We are constantly seeking to improve this course."
+- "Current directions are driven by military R&D."
 ---
 
 Gather feedback from participants.

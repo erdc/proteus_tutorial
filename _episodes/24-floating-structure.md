@@ -9,9 +9,7 @@ questions:
 - "What is the Immersed Finite Element approach to FSI?"
 - "What is added mass?"
 objectives:
-- "Gather feedback on the class"
+- "Enable ALE simulations of flooting and moored structures."
 keypoints:
-- "We are constantly seeking to improve this course."
+- "ALE can be accurate and robust event for large deformations and rotations but does not support collisions easily."
 ---
-
-Gather feedback from participants.

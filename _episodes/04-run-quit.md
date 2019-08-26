@@ -28,18 +28,14 @@ keypoints:
 
 ## Use the Jupyter Notebook for editing and running Python.
 
-*   The [Anaconda package manager][anaconda] is an automated way to install the Jupyter notebook.
-    *   See [the setup instructions]({{ site.github.url }}/setup/) for Anaconda installation 
-        instructions.
-*   It also installs all the extra libraries it needs to run.
-*   Once you have installed Python and the Jupyter Notebook requirements, open a shell and type:
+*   We will continue to start the Jupyter notebook with a docker image:
 
     ~~~
-    $ jupyter notebook
+    $ docker run -it -v 2019-08-26-pt:/home/jovyan/proteus_tutorial/work -p 8888:8888 erdc/proteus_tutorial:latest jupyter notebook --ip=0.0.0.0 --port 8888 --no-browser jupyter notebook
     ~~~
     {: .source}
 
-*   This will start a Jupyter Notebook server and open your default web browser. 
+*   This will start a Jupyter Notebook server and provide a URL that you can point your browser to.
 *   The server runs locally on your machine only and does not use an internet connection.
 *   The server sends messages to your browser.
 *   The server does the work and the web browser renders the notebook.

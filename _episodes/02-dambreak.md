@@ -13,10 +13,10 @@ objectives:
 keypoints:
 - "The central task of the main input (Python) file is to create TwoPhaseFlowProblem object."
 - "A domain object describtes the geometry, and Proteus supports many different types of domain."
-- "Initial condition objects describe the value of pressure, velocity, etc. at the initial time (usualy T=0)."
+- "Initial condition objects describe the value of pressure, velocity, etc. at the initial time (usually T=0)."
 - "Boundary conditions are required to complete the definition of the model."
 - "The SpatialTools module helps automate domain and boundary condition creation."
-- "The maximum cell diameter 'he' and the Courant number ('cfl') are the most important numerical parameters."
+- "The maximum cell diameter `he` and the Courant number `cfl` are the most important numerical parameters."
 - "Context options are often used to expose commonly modified parameters."
 ---
 ## Domains
@@ -41,7 +41,7 @@ keypoints:
 
 ## SpatialTools
 
-*   A more general type of domain in two-dimensions is known as a planar straight line graph, which is general enough for large majority of two-dimensional geometries.
+*   A more general type of domain in two-dimensions is known as a planar straight line graph, which is general enough for the large majority of two-dimensional geometries.
 *   There is trade-off between generality and ease of use, so we introduce a helper module, SpatialTools, to enable easier domain and boundary condition creation for two-phase flow models.
 *   Spatial tools predefines some basic domains and facilitates common boundary conditions.
     ~~~
@@ -97,7 +97,7 @@ keypoints:
 > ## Switch the tank bottom boundary condition to no-slip.
 >
 > Documentation can be found at [proteustoolkit.org](https://proteustoolkit.org), but you might guess or use Python built-in help
-> (covered in next segment) to find that a "setNoSlip()" functions is available.
+> (covered in next segment) to find that a `setNoSlip` function is available.
 >
 > > ## Solution
 > > ~~~
@@ -139,10 +139,10 @@ keypoints:
 > > ~~~
 > > class PHI_IC:
 > > def uOfXT(self, x, t):
-> >     h = 0.5*tank_dim[1]*((0.5*tank_dim[0])**2 - (x[0] - 0.5*tank_dim[0])**2)
-> >     return x[1] - h 
-~~~
-{: .python}
+> >     h = 0.25*tank_dim[1]*((0.5*tank_dim[0])**2 - (x[0] - 0.5*tank_dim[0])**2)
+> >     return x[1] - h
+> > ~~~
+> > {: .python}
 > {: .solution}
 {: .challenge}
 
@@ -173,9 +173,9 @@ keypoints:
 
 ## Numerical Parmameters
 
-*   The most common numerical parameter that requries changing is the maximum mesh cell diameter, "he".
+*   The most common numerical parameter that requires changing is the maximum mesh cell diameter, `he`.
 *   In some examples you will exposed directly, in others you may see a refinement level integer.
 *   In dynamical system, the numerical error in time is often closely related to the error in space.
-*   If the time step is dt, then we often wish to keep the ratio of "dt*velocity" and "he" near unity.
+*   If the time step is `dt`, then we often wish to keep the ratio of `dt*velocity` and `he` near unity.
 *   This dimensionless ratio is known as the Courant number and the condition C < 1 is known as a Courant-Friedrichs-Lewy (CFL) condition.
-*   As a general heuristic, we find that C=(0.1,0.0) provides sufficient time accuracy for most problems.
+*   As a general heuristic, we find that 0.1 <= C < 1 provides sufficient time accuracy for most problems.

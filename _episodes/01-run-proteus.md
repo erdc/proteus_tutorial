@@ -76,17 +76,17 @@ keypoints:
 
 > ## What does this command do?
 >
-> *   First, it starts the Python interpreter and load the Proteus Python package.
-> *   Next, the "--TwoPhaseFlow dambreak.py" option tells it to load a specific two-phase flow model from "dambreak.py".
-> *   Lastly, the "-l 1 -v" option tells the Proteus package to use a logging level of 1 and to be verbose (print the logging to the screen).
+> *   First, it starts the Python interpreter and loads the Proteus Python package.
+> *   Next, the `--TwoPhaseFlow dambreak.py` option tells it to load a specific two-phase flow model from `dambreak.py`.
+> *   Lastly, the `-l 1 -v` option tells the Proteus package to use a logging level of 1 and to be verbose (print the logging to the screen).
 {: .callout}
 
 > ## Getting help on the CLI
 >
-> How do you find out about "parun" options?
+> How do you find out about `parun` options?
 >
 > > ## Solution
-> > A common convention for command line utilities is to provide a "-h" or "--help" option, and proteus maintains this convention:
+> > A common convention for command line utilities is to provide a `-h` or `--help` option, and proteus maintains this convention:
 > >
 > > ~~~
 > > $ parun -h
@@ -107,8 +107,8 @@ keypoints:
 
 ## Proteus models are Python modules.
 
-*   In this example the model is defined in the Python module "dambreak.py"
-*   The ".py" extension lets everyone (including the operating system) know it is Python code.
+*   In this example the model is defined in the Python module `dambreak.py`
+*   The `.py` extension lets everyone (including the operating system) know it is Python code.
 *   It's common to write Proteus models using a text editor, but we will also use the Jupyter Notebook.
 
 > ## Getting help on a model 
@@ -116,7 +116,7 @@ keypoints:
 > What additional options are available for the dambreak case?
 >
 > > ## Solution
-> > Proteus models can have their own context options. These are aspects of the simulation that you might wish to change without modifying the Python code for the model. To see the options, pass "?" to the "-C" (context) option.
+> > Proteus models can have their own context options. These are aspects of the simulation that you might wish to change without modifying the Python code for the model. To see the options, pass `"?"` to the `-C` (context) option.
 > >
 > > ~~~
 > > $ parun --TwoPhaseFlow dambreak.py -C "?"
