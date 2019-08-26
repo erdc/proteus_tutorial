@@ -158,7 +158,7 @@ tank.BC['y-'].setTank() #Allows nodes to slip freely
 
 ###################	Generation & Absorption Zone	###################
 
-dragAlpha = 5*(2*np.pi/opts.T)
+dragAlpha = 5*(2*np.pi/opts.T)/1e-6
 tank.setSponge(x_n=opts.tank_sponge[0]*wave_length, x_p=opts.tank_sponge[1]*wave_length)
 tank.setGenerationZones(x_n=True, waves=wave, smoothing=smoothing, dragAlpha=dragAlpha)
 tank.setAbsorptionZones(x_p=True, dragAlpha=dragAlpha) 
@@ -166,7 +166,6 @@ tank.setAbsorptionZones(x_p=True, dragAlpha=dragAlpha)
 if opts.caisson2D:
     tank.setChildShape(caisson, 0)
 
-# --- Assemble Domain                                                                                                                                                                                          
 ###################	Initial Conditions	###################
 
 def signedDistance(x):

@@ -1,4 +1,3 @@
-from proteus.mprans.BodyDynamics import RigidBody
 import numpy as np
 from proteus import (Domain,
                     Context,
@@ -11,10 +10,12 @@ from proteus.ctransportCoefficients import (smoothedHeaviside,
                                             smoothedHeaviside_integral)
 from proteus.Profiling import logEvent
 from proteus.mprans.SpatialTools import Tank2D
-from proteus.mprans import BodyDynamics as bd
+#from proteus.mprans import BodyDynamics as bd
 import proteus.TwoPhaseFlow.TwoPhaseFlowProblem as TpFlow
-
-
+from proteus.mbd.CouplingFSI import (ProtChBody,
+                                     ProtChSystem)
+#from proteus.mbd import pychrono as pych
+import pychrono as pych
 # --- Context Options
 
 opts=Context.Options([
@@ -45,16 +46,16 @@ opts=Context.Options([
    # Caisson
     ("caisson2D", True, "Switch on/off caisson2D"),
     ("center", (0.5, 0.9),"Coord of the caisson center"),
-    ("dim",(0.3,0.3),"(X-dimension of the caisson2D,Y-dimension of the caisson2D"),
+    ("dim",(0.3,0.1),"(X-dimension of the caisson2D,Y-dimension of the caisson2D"),
     ('width', 0.9, 'Z-dimension of the caisson2D'),
-    ('mass', 30., 'Mass of the caisson2D [kg]'),#125
+    ('mass', 15., 'Mass of the caisson2D [kg]'),#125
     ('caisson_BC', 'FreeSlip', 'caisson2D boundaries: NoSlip or FreeSlip'),
     ("free_x", np.array([0., 1., 0.0]), "Translational DOFs"),
     ("free_r", np.array([0., 0., 1.0]), "Rotational DOFs"),
     ("caisson_inertia", 0.236, "Inertia of the caisson 0.236, 1.04 [kg m2]"),
     ("rotation_angle", 0., "Initial rotation angle (in degrees)"),
     ("Tn", 0.93, "Roll natural period"),
-    ("overturning", True, "Switch on/off overturning module"),
+    ("chrono_dt", 0.00001, "chrono time step"),
     
     # Numerical Settings & Parameters
     ("he", 0.06,"maximum element edge length"),
@@ -101,39 +102,33 @@ yc4 = yc3
 
 # --- Caisson2D Properties
 if opts.caisson2D:
-    VCG = opts.dim[1]/2.
-    volume = float(opts.dim[0]*opts.dim[1]*opts.width)
-    density = float(opts.mass/volume)
-    inertia = opts.caisson_inertia/opts.mass/opts.width
 
-# --- Shape properties setup
-    caisson = st.Rectangle(domain, dim=opts.dim, coords=opts.center)
-    xc1, yc1 = caisson.vertices[0][0], caisson.vertices[0][1]
-    xc2, yc2 = caisson.vertices[1][0], caisson.vertices[1][1]
+    inertia = opts.caisson_inertia/opts.width
+    caisson = st.Rectangle(domain, dim=opts.dim, coords=opts.center)  
+    caisson.setHoles([[opts.center[0], opts.center[1]]])
+    caisson.holes_ind = np.array([0])
+    system = ProtChSystem()
+    system.ChSystem.Set_G_acc(pych.ChVectorD(0., -9.81, 0.))  # [m/s^2]
+    system.setTimeStep(opts.chrono_dt)
+    body = ProtChBody(system=system)
+    body.attachShape(caisson)
 
-# --- Body properties setup
-    #caisson2D = bd.RigidBody(shape=caisson, substeps=20)
-    caisson2D = bd.CaissonBody(shape=caisson, substeps=40)
-    caisson2D.setMass(mass=opts.mass)
-    caisson2D.setConstraints(free_x=opts.free_x, free_r=opts.free_r)
-    rotation = np.radians(opts.rotation_angle)
-    caisson.rotate(rotation)
-    caisson2D.It = inertia
-    caisson2D.setNumericalScheme(scheme=opts.scheme)
-    caisson2D.setRecordValues(filename='caisson2D', all_values=True)
-
-
+    pos = pych.ChVectorD(opts.center[0], opts.center[1],0.0)
+    inertia = pych.ChVectorD(1., 1., inertia)
+    # chrono functions
+    body.ChBody.SetPos(pos)
+    body.ChBody.SetMass(opts.mass)
+    body.ChBody.SetInertiaXX(inertia)
+    # customised functions
+    body.setConstraints(free_x=np.array(opts.free_x), free_r=np.array(opts.free_r))
+    body.setRecordValues(all_values=True)
+    
 # --- Caisson2D
 for bc in caisson.BC_list:
     if opts.caisson_BC == 'NoSlip':
         bc.setNoSlip()
     if opts.caisson_BC == 'FreeSlip':
         bc.setFreeSlip()
-
-def prescribed_motion(t):
-        new_x = np.array(opts.dim)
-        new_x[1] = opts.dim[1]+0.01*cos(2*np.pi*(t/4)+np.pi/2)
-        return new_x
 
 ###################	Boundary Conditions	###################
 
@@ -163,17 +158,13 @@ tank.BC['y-'].setTank() #Allows nodes to slip freely
 
 ###################	Generation & Absorption Zone	###################
 
-dragAlpha = 5*(2*np.pi/opts.T)
+dragAlpha = 5e6*(2*np.pi/opts.T)
 tank.setSponge(x_n=opts.tank_sponge[0]*wave_length, x_p=opts.tank_sponge[1]*wave_length)
 tank.setGenerationZones(x_n=True, waves=wave, smoothing=smoothing, dragAlpha=dragAlpha)
 tank.setAbsorptionZones(x_p=True, dragAlpha=dragAlpha) 
 
 if opts.caisson2D:
     tank.setChildShape(caisson, 0)
-
-# --- Assemble Domain                                                                                                                                                                                                                                                 
-domain.MeshOptions.he = opts.he
-st.assembleDomain(domain)
 
 ###################	Initial Conditions	###################
 
@@ -241,5 +232,20 @@ m.ncls.index = 3
 m.rdls.index = 4
 m.mcorr.index = 5
 
+domain.MeshOptions.he = opts.he
+st.assembleDomain(domain)
+
 myTpFlowProblem.Parameters.Models.rans2p.auxiliaryVariables += domain.auxiliaryVariables['twp']
 myTpFlowProblem.movingDomain = opts.movingDomain
+
+m.rans2p.auxiliaryVariables += [system]
+
+
+max_flag = max(domain.vertexFlags+domain.segmentFlags+domain.facetFlags)
+flags_rigidbody = np.zeros(max_flag+1, dtype='int32')
+for key in caisson.boundaryTags_global:
+    flags_rigidbody[caisson.boundaryTags_global[key]] = 1
+m.addedMass.index = 6
+m.addedMass.p.CoefficientsOptions.flags_rigidbody = flags_rigidbody
+m.addedMass.p.CoefficientsOptions.solve_rate = 0.#1000.
+m.addedMass.auxiliaryVariables += [system.ProtChAddedMass]

@@ -1,19 +1,18 @@
 #!/bin/bash
-#PBS -A ERDCV00898R40
-#PBS -l walltime=001:00:00
-#PBS -l select=1:ncpus=44:mpiprocs=44
+#PBS -A MHPCC96640PDP
+#PBS -l walltime=003:00:00
+#PBS -l select=1:ncpus=32:mpiprocs=32
 #PBS -l place=scatter:excl
-#PBS -q debug
+#PBS -q standard
 #PBS -N dambreak
 #PBS -j oe
 #PBS -l application=proteus
-#PBS -V
 #PBS -m eba
 ##PBS -M myemail@mydomain
 #setup modules and check proteus version
-. /opt/cray/pe/modules/default/etc/modules.sh
-export MODULEPATH=/p/app/unsupported/proteus/modulefiles:${MODULEPATH}
-module load proteus/master
+. ${MODULESHOME}/etc/modules.sh
+export MODULEPATH=${PROJECTS_HOME}/proteus/modulefiles:${MODULEPATH}
+module load proteus/1.7.0
 which parun
 #create a working directory and copy over the inputs use
 cd $PBS_O_WORKDIR

@@ -1,9 +1,9 @@
 #!/bin/bash
 #PBS -A ERDCV00898R40
-#PBS -l walltime=001:00:00
+#PBS -l walltime=048:00:00
 #PBS -l select=4:ncpus=44:mpiprocs=44
 #PBS -l place=scatter:excl
-#PBS -q debug
+#PBS -q standard
 #PBS -N marin
 #PBS -j oe
 #PBS -l application=proteus
