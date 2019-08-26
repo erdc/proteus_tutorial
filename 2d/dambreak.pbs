@@ -7,12 +7,11 @@
 #PBS -N dambreak
 #PBS -j oe
 #PBS -l application=proteus
-#PBS -V
 #PBS -m eba
 ##PBS -M myemail@mydomain
 #setup modules and check proteus version
-. /opt/cray/pe/modules/default/etc/modules.sh
-export MODULEPATH=/p/app/unsupported/proteus/modulefiles:${MODULEPATH}
+. ${MODULESHOME}/etc/modules.sh
+export MODULEPATH=${PROJECTS_HOME}/proteus/modulefiles:${MODULEPATH}
 module load proteus/1.7.0
 which parun
 #create a working directory and copy over the inputs use
