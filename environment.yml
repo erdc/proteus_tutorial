@@ -1,0 +1,7 @@
+name: proteus_tutorial
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - proteus
+  - notebook
