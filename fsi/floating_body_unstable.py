@@ -9,46 +9,8 @@ from proteus.mbd import CouplingFSI as fsi
 import pychrono
 
 
-#   ____            _            _      ___        _   _
-#  / ___|___  _ __ | |_ _____  _| |_   / _ \ _ __ | |_(_) ___  _ __  ___
-# | |   / _ \| '_ \| __/ _ \ \/ / __| | | | | '_ \| __| |/ _ \| '_ \/ __|
-# | |__| (_) | | | | ||  __/>  <| |_  | |_| | |_) | |_| | (_) | | | \__ \
-#  \____\___/|_| |_|\__\___/_/\_\\__|  \___/| .__/ \__|_|\___/|_| |_|___/
-#                                           |_|
-# Context options
-# used in command line directly with option -C
-# e.g.: parun [...] -C "g=(0.,-9.81,0.) rho_0=998.2 genMesh=False"
-#
-# only change/add context options in the "other options section"
-# other sections have variables used in _p and _n files
-
-context_options = []
-# physical constants
-context_options += [
-    ("rho_0", 998.2, "Water density"),
-    ("nu_0", 1.004e-6, "Water kinematic viscosity m/sec^2"),
-    ("rho_1", 1.205, "Air Densiy"),
-    ("nu_1", 1.5e-5, "Air kinematic viscosity m/sec^2"),
-    ("sigma_01", 0., "Surface tension"),
-    ("g", (0, -9.81, 0.), "Gravitational acceleration vector"),
-    ]
-# run time options
-context_options += [
-    ("T", 0.1 ,"Simulation time in s"),
-    ("dt_init", 0.001 ,"Value of initial time step"),
-    ("dt_fixed", None, "Value of maximum time step"),
-    ("archiveAllSteps", False, "archive every steps"),
-    ("dt_output", 0.05, "number of saves per second"),
-    ("runCFL", 0.5 ,"Target CFL value"),
-    ("cfl", 0.5 ,"Target CFL value"),
-    ]
-
-he = 0.01
+he = 0.05
 movingDomain = True
-addedMass = True
-
-# instantiate context options
-opts=Context.Options(context_options)
 
 rho_0 = 998.2
 nu_0 = 1.004e-6
@@ -139,7 +101,7 @@ body.setName(b'my_body')
 # attach shape: this automatically adds a body at the barycenter of the caisson shape
 body.attachShape(caisson)
 # set 2D width (for force calculation)
-body.setWidth2D(1.)
+body.setWidth2D(0.29)
 # record values
 body.setRecordValues(all_values=True)
 # impose constraints
@@ -149,9 +111,9 @@ body.setConstraints(free_x=free_x, free_r=free_r)
 # access pychrono ChBody
 chbody = body.ChBody
 # set mass
-chbody.SetMass(16.)
+chbody.SetMass(14.5)
 # set inertia
-chbody.SetInertiaXX(pychrono.ChVectorD(1., 1., 0.236))
+chbody.SetInertiaXX(pychrono.ChVectorD(1., 1., 0.35))
 
 
 #  ____                        _                   ____                _ _ _   _
@@ -214,7 +176,7 @@ nd = domain.nd
 class P_IC:
     def uOfXT(self, x, t):
         p_L = 0.0
-        phi_L = tank_dim[nd-1] - water_level
+        phi_L = tank.dim[nd-1] - water_level
         phi = x[nd-1] - water_level
         p = p_L -g[nd-1]*(rho_0*(phi_L - phi)
                           +(rho_1 -rho_0)*(smoothedHeaviside_integral(smoothing,phi_L)
@@ -273,19 +235,19 @@ domain.geofile = mesh_fileprefix
 # Numerics
 
 outputStepping = TpFlow.OutputStepping(
-    final_time=opts.T,
-    dt_init=opts.dt_init,
+    final_time=10.,
+    dt_init=0.001,
     # cfl=opts.cfl,
-    dt_output=opts.dt_output,
+    dt_output=0.05,
     nDTout=None,
-    dt_fixed=opts.dt_fixed,
+    dt_fixed=None,
 )
 
 myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(
     ns_model=None,
     ls_model=None,
     nd=domain.nd,
-    cfl=opts.cfl,
+    cfl=0.5,
     outputStepping=outputStepping,
     structured=False,
     he=he,
@@ -323,25 +285,9 @@ m.rdls.index = ind+1
 ind += 1
 m.mcorr.index = ind+1
 ind += 1
-if addedMass is True:
-    m.addedMass.index = ind+1
-    ind += 1
 
 # ADD RELAXATION ZONES TO AUXILIARY VARIABLES
 m.rans2p.auxiliaryVariables += domain.auxiliaryVariables['twp']
 # ADD SYSTEM TO AUXILIARY VARIABLES
 m.rans2p.auxiliaryVariables += [system]
 
-if addedMass is True:
-    # passed in added_mass_p.py coefficients
-    m.addedMass.auxiliaryVariables += [system.ProtChAddedMass]
-    max_flag = 0
-    max_flag = max(domain.vertexFlags)
-    max_flag = max(domain.segmentFlags+[max_flag])
-    max_flag = max(domain.facetFlags+[max_flag])
-    flags_rigidbody = np.zeros(max_flag+1, dtype='int32')
-    for s in system.subcomponents:
-        if type(s) is fsi.ProtChBody:
-            for i in s.boundaryFlags:
-                flags_rigidbody[i] = 1
-    m.addedMass.p.coefficients.flags_rigidbody = flags_rigidbody

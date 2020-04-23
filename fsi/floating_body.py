@@ -8,46 +8,10 @@ from proteus import WaveTools as wt
 from proteus.mbd import CouplingFSI as fsi
 import pychrono
 
-#   ____            _            _      ___        _   _
-#  / ___|___  _ __ | |_ _____  _| |_   / _ \ _ __ | |_(_) ___  _ __  ___
-# | |   / _ \| '_ \| __/ _ \ \/ / __| | | | | '_ \| __| |/ _ \| '_ \/ __|
-# | |__| (_) | | | | ||  __/>  <| |_  | |_| | |_) | |_| | (_) | | | \__ \
-#  \____\___/|_| |_|\__\___/_/\_\\__|  \___/| .__/ \__|_|\___/|_| |_|___/
-#                                           |_|
-# Context options
-# used in command line directly with option -C
-# e.g.: parun [...] -C "g=(0.,-9.81,0.) rho_0=998.2 genMesh=False"
-#
-# only change/add context options in the "other options section"
-# other sections have variables used in _p and _n files
 
-context_options = []
-# physical constants
-context_options += [
-    ("rho_0", 998.2, "Water density"),
-    ("nu_0", 1.004e-6, "Water kinematic viscosity m/sec^2"),
-    ("rho_1", 1.205, "Air Densiy"),
-    ("nu_1", 1.5e-5, "Air kinematic viscosity m/sec^2"),
-    ("sigma_01", 0., "Surface tension"),
-    ("g", (0, -9.81, 0.), "Gravitational acceleration vector"),
-    ]
-# run time options
-context_options += [
-    ("T", 0.1 ,"Simulation time in s"),
-    ("dt_init", 0.001 ,"Value of initial time step"),
-    ("dt_fixed", None, "Value of maximum time step"),
-    ("archiveAllSteps", False, "archive every steps"),
-    ("dt_output", 0.05, "number of saves per second"),
-    ("runCFL", 0.5 ,"Target CFL value"),
-    ("cfl", 0.5 ,"Target CFL value"),
-    ]
-
-he = 0.01
+he = 0.05
 movingDomain = True
 addedMass = True
-
-# instantiate context options
-opts=Context.Options(context_options)
 
 rho_0 = 998.2
 nu_0 = 1.004e-6
@@ -138,7 +102,7 @@ body.setName(b'my_body')
 # attach shape: this automatically adds a body at the barycenter of the caisson shape
 body.attachShape(caisson)
 # set 2D width (for force calculation)
-body.setWidth2D(1.)
+body.setWidth2D(0.29)
 # record values
 body.setRecordValues(all_values=True)
 # impose constraints
@@ -148,161 +112,9 @@ body.setConstraints(free_x=free_x, free_r=free_r)
 # access pychrono ChBody
 chbody = body.ChBody
 # set mass
-chbody.SetMass(16.)
+chbody.SetMass(14.5)
 # set inertia
-chbody.SetInertiaXX(pychrono.ChVectorD(1., 1., 0.236))
-
-# MOORINGS
-
-# variables
-# length
-L = 1.134 # m
-# submerged weight
-w = 0.0778  # kg/m
-# equivalent diameter (chain -> cylinder)
-d = 2.5e-3 # m
-# unstretched cross-sectional area
-A0 = (np.pi*d**2/4)
-# density
-dens = w/A0+rho_0
-# number of elements for cable
-nb_elems =  50
-# Young's modulus
-E = 5.44e10
-
-# fairleads coordinates
-fairlead_center = np.array([caisson.barycenter[0], water_level-0.045, 0.])
-fairlead1 = fairlead_center+np.array([-caisson.dim[0]/2., 0., 0.])
-fairlead2 = fairlead_center+np.array([caisson.dim[0]/2., 0., 0.])
-# anchors coordinates
-anchor1 = np.array([fairlead1[0]-1., 0., 0.])
-anchor2 = np.array([fairlead2[0]+1., 0., 0.])
-
-# quasi-statics for finding shape of cable
-from pycatenary.cable import MooringLine
-# create lines
-cat1 = MooringLine(L=L,
-                   w=w*9.81,
-                   EA=1e20,
-                   anchor=anchor1,
-                   fairlead=fairlead1,
-                   nd=2,
-                   floor=True)
-cat2 = MooringLine(L=L,
-                   w=w*9.81,
-                   EA=1e20,
-                   anchor=anchor2,
-                   fairlead=fairlead2,
-                   nd=2,
-                   floor=True)
-cat1.computeSolution()
-cat2.computeSolution()
-
-# ANCHOR
-
-# arbitrary body fixed in space
-body2 = fsi.ProtChBody(system)
-body2.barycenter0 = np.zeros(3)
-# fix anchor in space
-body2.ChBody.SetBodyFixed(True)
-
-# MESH
-
-# initialize mesh that will be used for cables
-mesh = fsi.ProtChMesh(system)
-
-# FEM CABLES
-
-# moorings line 1
-m1 = fsi.ProtChMoorings(system=system,
-                        mesh=mesh,
-                        length=np.array([L]),
-                        nb_elems=np.array([nb_elems]),
-                        d=np.array([d]),
-                        rho=np.array([dens]),
-                        E=np.array([E]))
-m1.setName(b'mooring1')
-# send position functions from catenary to FEM cable
-m1.setNodesPositionFunction(cat1.s2xyz, cat1.ds2xyz)
-# sets node positions of the cable
-m1.setNodesPosition()
-# build cable
-m1.buildNodes()
-# apply external forces
-m1.setApplyDrag(True)
-m1.setApplyBuoyancy(True)
-m1.setApplyAddedMass(True)
-# set fluid density at cable nodes
-m1.setFluidDensityAtNodes(np.array([rho_0 for i in range(m1.nodes_nb)]))
-# sets drag coefficients
-m1.setDragCoefficients(tangential=1.15, normal=0.213, segment_nb=0)
-# sets added mass coefficients
-m1.setAddedMassCoefficients(tangential=0.269, normal=0.865, segment_nb=0)
-# small Iyy for bending
-m1.setIyy(0., 0.)
-# attach back node of cable to body
-m1.attachBackNodeToBody(body)
-# attach front node to anchor
-m1.attachFrontNodeToBody(body2)
-
-# mooring line 2
-m2 = fsi.ProtChMoorings(system=system,
-                        mesh=mesh,
-                        length=np.array([L]),
-                        nb_elems=np.array([nb_elems]),
-                        d=np.array([d]),
-                        rho=np.array([dens]),
-                        E=np.array([E]))
-m2.setName(b'mooring2')
-# send position functions from catenary to FEM cable
-m2.setNodesPositionFunction(cat2.s2xyz, cat2.ds2xyz)
-# sets node positions of the cable
-m2.setNodesPosition()
-# build cable
-m2.buildNodes()
-# apply external forces
-m2.setApplyDrag(True)
-m2.setApplyBuoyancy(True)
-m2.setApplyAddedMass(True)
-# set fluid density at cable nodes
-m2.setFluidDensityAtNodes(np.array([rho_0 for i in range(m2.nodes_nb)]))
-# sets drag coefficients
-m2.setDragCoefficients(tangential=1.15, normal=0.213, segment_nb=0)
-# sets added mass coefficients
-m2.setAddedMassCoefficients(tangential=0.269, normal=0.865, segment_nb=0)
-# small Iyy for bending
-m2.setIyy(0., 0.)
-# attach back node of cable to body
-m2.attachBackNodeToBody(body)
-# attach front node to anchor
-m2.attachFrontNodeToBody(body2)
-
-# SEABED
-
-# create a box
-seabed = pychrono.ChBodyEasyBox(100., 100., 0.2, 1000, True)
-# move box
-seabed.SetPos(pychrono.ChVectorD(0., -0.1-d*2., 0.))
-# fix boxed in space
-seabed.SetBodyFixed(True)
-# add box to system
-system.ChSystem.Add(seabed)
-
-# CONTACT MATERIAL
-
-# define contact material for collision detection
-material = pychrono.ChMaterialSurfaceSMC()
-material.SetKn(3e6)  # normal stiffness
-material.SetGn(1.)  # normal damping coefficient
-material.SetFriction(0.3)
-material.SetRestitution(0.2)
-material.SetAdhesion(0)
-
-# add material to objects
-seabed.SetMaterialSurface(material)
-m1.setContactMaterial(material)
-m2.setContactMaterial(material)
-
+chbody.SetInertiaXX(pychrono.ChVectorD(1., 1., 0.35))
 
 
 #  ____                        _                   ____                _ _ _   _
@@ -365,7 +177,7 @@ nd = domain.nd
 class P_IC:
     def uOfXT(self, x, t):
         p_L = 0.0
-        phi_L = tank_dim[nd-1] - water_level
+        phi_L = tank.dim[nd-1] - water_level
         phi = x[nd-1] - water_level
         p = p_L -g[nd-1]*(rho_0*(phi_L - phi)
                           +(rho_1 -rho_0)*(smoothedHeaviside_integral(smoothing,phi_L)
@@ -424,19 +236,19 @@ domain.geofile = mesh_fileprefix
 # Numerics
 
 outputStepping = TpFlow.OutputStepping(
-    final_time=opts.T,
-    dt_init=opts.dt_init,
+    final_time=10.,
+    dt_init=0.001,
     # cfl=opts.cfl,
-    dt_output=opts.dt_output,
+    dt_output=0.05,
     nDTout=None,
-    dt_fixed=opts.dt_fixed,
+    dt_fixed=None,
 )
 
 myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(
     ns_model=None,
     ls_model=None,
     nd=domain.nd,
-    cfl=opts.cfl,
+    cfl=0.5,
     outputStepping=outputStepping,
     structured=False,
     he=he,

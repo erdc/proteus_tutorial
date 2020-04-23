@@ -4,44 +4,8 @@ from proteus.mprans import SpatialTools as st
 import proteus.TwoPhaseFlow.TwoPhaseFlowProblem as TpFlow
 from proteus import WaveTools as wt
 
-#   ____            _            _      ___        _   _
-#  / ___|___  _ __ | |_ _____  _| |_   / _ \ _ __ | |_(_) ___  _ __  ___
-# | |   / _ \| '_ \| __/ _ \ \/ / __| | | | | '_ \| __| |/ _ \| '_ \/ __|
-# | |__| (_) | | | | ||  __/>  <| |_  | |_| | |_) | |_| | (_) | | | \__ \
-#  \____\___/|_| |_|\__\___/_/\_\\__|  \___/| .__/ \__|_|\___/|_| |_|___/
-#                                           |_|
-# Context options
-# used in command line directly with option -C
-# e.g.: parun [...] -C "g=(0.,-9.81,0.) rho_0=998.2 genMesh=False"
-#
-# only change/add context options in the "other options section"
-# other sections have variables used in _p and _n files
 
-context_options = []
-# physical constants
-context_options += [
-    ("rho_0", 998.2, "Water density"),
-    ("nu_0", 1.004e-6, "Water kinematic viscosity m/sec^2"),
-    ("rho_1", 1.205, "Air Densiy"),
-    ("nu_1", 1.5e-5, "Air kinematic viscosity m/sec^2"),
-    ("sigma_01", 0., "Surface tension"),
-    ("g", (0, -9.81, 0.), "Gravitational acceleration vector"),
-    ]
-# run time options
-context_options += [
-    ("T", 0.1 ,"Simulation time in s"),
-    ("dt_init", 0.001 ,"Value of initial time step"),
-    ("dt_fixed", None, "Value of maximum time step"),
-    ("archiveAllSteps", False, "archive every steps"),
-    ("dt_output", 0.05, "number of saves per second"),
-    ("runCFL", 0.5 ,"Target CFL value"),
-    ("cfl", 0.5 ,"Target CFL value"),
-    ]
-
-he = 0.01
-
-# instantiate context options
-opts=Context.Options(context_options)
+he = 0.05
 
 rho_0 = 998.2
 nu_0 = 1.004e-6
@@ -49,8 +13,6 @@ rho_1 = 1.205
 nu_1 = 1.5e-5
 g = np.array([0., -9.81, 0.])
 
-
-# ----- CONTEXT ------ #
 
 water_level = 0.515
 wave_period = 0.87
@@ -144,7 +106,7 @@ nd = domain.nd
 class P_IC:
     def uOfXT(self, x, t):
         p_L = 0.0
-        phi_L = tank_dim[nd-1] - water_level
+        phi_L = tank.dim[nd-1] - water_level
         phi = x[nd-1] - water_level
         p = p_L -g[nd-1]*(rho_0*(phi_L - phi)
                           +(rho_1 -rho_0)*(smoothedHeaviside_integral(smoothing,phi_L)
@@ -203,19 +165,19 @@ domain.geofile = mesh_fileprefix
 # Numerics
 
 outputStepping = TpFlow.OutputStepping(
-    final_time=opts.T,
-    dt_init=opts.dt_init,
+    final_time=10.,
+    dt_init=0.001,
     # cfl=opts.cfl,
-    dt_output=opts.dt_output,
+    dt_output=0.05,
     nDTout=None,
-    dt_fixed=opts.dt_fixed,
+    dt_fixed=None,
 )
 
 myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(
     ns_model=None,
     ls_model=None,
     nd=domain.nd,
-    cfl=opts.cfl,
+    cfl=0.5,
     outputStepping=outputStepping,
     structured=False,
     he=he,
