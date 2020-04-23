@@ -109,7 +109,7 @@ body.setWidth2D(0.29)
 # record values
 body.setRecordValues(all_values=True)
 # impose constraints
-free_x = np.array([0., 1., 0.]) # translational
+free_x = np.array([1., 1., 0.]) # translational
 free_r = np.array([0., 0., 1.]) # rotational
 body.setConstraints(free_x=free_x, free_r=free_r)
 # access pychrono ChBody
@@ -123,7 +123,7 @@ chbody.SetInertiaXX(pychrono.ChVectorD(1., 1., 0.35))
 
 # variables
 # length
-L = 1.134 # m
+L = 1.3 # m
 # submerged weight
 w = 0.0778  # kg/m
 # equivalent diameter (chain -> cylinder)
