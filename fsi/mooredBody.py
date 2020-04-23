@@ -181,7 +181,7 @@ anchor2 = np.array([fairlead2[0]+1., 0., 0.])
 
 # quasi-statics for finding shape of cable
 from pycatenary.cable import MooringLine
-# create lines 
+# create lines
 cat1 = MooringLine(L=L,
                    w=w*9.81,
                    EA=1e20,
@@ -320,7 +320,7 @@ m2.setContactMaterial(material)
 for tag, bc in caisson.BC.items():
     bc.setNoSlip()
 
-# TANK 
+# TANK
 
 # atmosphere on top
 tank.BC['y+'].setAtmosphere()
@@ -496,4 +496,4 @@ if addedMass is True:
         if type(s) is fsi.ProtChBody:
             for i in s.boundaryFlags:
                 flags_rigidbody[i] = 1
-    m.addedMass.p.CoefficientsOptions.flags_rigidbody = flags_rigidbody
+    m.addedMass.p.coefficients.flags_rigidbody = flags_rigidbody
