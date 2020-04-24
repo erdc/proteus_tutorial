@@ -19,7 +19,7 @@ cfl = 0.5
 # mesh size
 he = 0.05
 # rate at which values are recorded
-sampleRate = 0.05  
+sampleRate = 0.05
 # for ALE formulation
 movingDomain = True
 # for added mass stabilization
@@ -103,6 +103,8 @@ caisson.translate(np.array([1*wavelength, water_level]))
 
 # create system
 system = fsi.ProtChSystem()
+# access chrono object
+chsystem = system.getChronoObject()
 # communicate gravity to system
 # can also be set with:
 # system.ChSystem.Set_G_acc(pychrono.ChVectorD(g[0], g[1], g[2]))
@@ -113,36 +115,36 @@ system.setTimeStep(1e-4)
 system.setSampleRate(sampleRate)
 
 solver = pychrono.ChSolverMINRES()
-system.ChSystem.SetSolver(solver)
+chsystem.SetSolver(solver)
 solver.SetMaxIterations(1000)
 solver.EnableWarmStart(True)
 solver.EnableDiagonalPreconditioner(True)
-system.ChSystem.SetSolverForceTolerance(1e-10)
-system.ChSystem.SetSolverMaxIterations(1000)
+chsystem.SetSolverForceTolerance(1e-10)
+chsystem.SetSolverMaxIterations(1000)
 
 # BODY
 
 # create floating body
 body = fsi.ProtChBody(system=system)
-# give it a name
-body.setName(b'my_body')
 # attach shape: this automatically adds a body at the barycenter of the caisson shape
 body.attachShape(caisson)
 # set 2D width (for force calculation)
 body.setWidth2D(0.29)
+# access chrono object
+chbody = body.getChronoObject()
 # impose constraints
-body.ChBody.SetBodyFixed(fixed)
+chbody.SetBodyFixed(fixed)
 free_x = np.array([1., 1., 0.])
 free_r = np.array([0., 0., 1.])
 body.setConstraints(free_x=free_x, free_r=free_r)
 # access pychrono ChBody
 # set mass
 # can also be set with:
-# chbody.SetMass(14.5)
+# body.ChBody.SetMass(14.5)
 body.setMass(14.5)
 # set inertia
 # can also be set with:
-# chbody.setInertiaXX(pychrono.ChVectorD(1., 1., 0.35))
+# body.ChBody.setInertiaXX(pychrono.ChVectorD(1., 1., 0.35))
 body.setInertiaXX(np.array([1., 1., 0.35]))
 # record values
 body.setRecordValues(all_values=True)
@@ -402,14 +404,12 @@ initialConditions = {'pressure': P_IC(),
 #                                |_|
 
 
-domain.MeshOptions.use_gmsh = False
 domain.MeshOptions.genMesh = True
 domain.MeshOptions.he = he
 mesh_fileprefix = 'mesh'
 domain.MeshOptions.setOutputFiles(mesh_fileprefix)
+
 st.assembleDomain(domain)
-domain.use_gmsh = domain.MeshOptions.use_gmsh
-domain.geofile = mesh_fileprefix
 
 
 
@@ -458,19 +458,26 @@ m = myTpFlowProblem.Parameters.Models
 
 # MODEL PARAMETERS
 ind = -1
+# first model is mesh motion (if any)
 if movingDomain:
     m.moveMeshElastic.index = ind+1
     ind += 1
+# navier-stokes
 m.rans2p.index = ind+1
 ind += 1
+# volume of fluid
 m.vof.index = ind+1
 ind += 1
+# level set
 m.ncls.index = ind+1
 ind += 1
+# redistancing
 m.rdls.index = ind+1
 ind += 1
+# mass correction
 m.mcorr.index = ind+1
 ind += 1
+# added mass estimation
 if addedMass is True:
     m.addedMass.index = ind+1
     ind += 1

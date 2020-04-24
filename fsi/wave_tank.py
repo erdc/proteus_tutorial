@@ -7,7 +7,7 @@ from proteus import WaveTools as wt
 
 # general options
 # sim time
-T = 10.
+T = 20.
 # initial step
 dt_init = 0.001
 # CFL value
@@ -15,7 +15,7 @@ cfl = 0.5
 # mesh size
 he = 0.05
 # rate at which values are recorded
-sampleRate = 0.05  
+sampleRate = 0.05
 
 # physical options
 # water density
@@ -159,14 +159,12 @@ initialConditions = {'pressure': P_IC(),
 #                                |_|
 
 
-domain.MeshOptions.use_gmsh = False
 domain.MeshOptions.genMesh = True
 domain.MeshOptions.he = he
 mesh_fileprefix = 'mesh'
 domain.MeshOptions.setOutputFiles(mesh_fileprefix)
+
 st.assembleDomain(domain)
-domain.use_gmsh = domain.MeshOptions.use_gmsh
-domain.geofile = mesh_fileprefix
 
 
 
@@ -213,14 +211,19 @@ m = myTpFlowProblem.Parameters.Models
 
 # MODEL PARAMETERS
 ind = -1
+# navier-stokes
 m.rans2p.index = ind+1
 ind += 1
+# volume of fluid
 m.vof.index = ind+1
 ind += 1
+# level set
 m.ncls.index = ind+1
 ind += 1
+# redistancing
 m.rdls.index = ind+1
 ind += 1
+# mass correction
 m.mcorr.index = ind+1
 ind += 1
 

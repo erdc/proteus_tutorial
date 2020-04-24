@@ -19,7 +19,7 @@ cfl = 0.5
 # mesh size
 he = 0.05
 # rate at which values are recorded
-sampleRate = 0.05  
+sampleRate = 0.05
 # for ALE formulation
 movingDomain = True
 # for added mass stabilization
@@ -103,6 +103,8 @@ caisson.translate(np.array([1*wavelength, water_level]))
 
 # create system
 system = fsi.ProtChSystem()
+# access chrono object
+chsystem = system.getChronoObject()
 # communicate gravity to system
 # can also be set with:
 # system.ChSystem.Set_G_acc(pychrono.ChVectorD(g[0], g[1], g[2]))
@@ -111,7 +113,7 @@ system.setGravitationalAcceleration(g)
 system.setTimeStep(1e-4)
 
 solver = pychrono.ChSolverMINRES()
-system.ChSystem.SetSolver(solver)
+chsystem.SetSolver(solver)
 
 # BODY
 
@@ -123,8 +125,10 @@ body.setName(b'my_body')
 body.attachShape(caisson)
 # set 2D width (for force calculation)
 body.setWidth2D(0.29)
+# access chrono object
+chbody = body.getChronoObject()
 # impose constraints
-body.ChBody.SetBodyFixed(fixed)
+chbody.SetBodyFixed(fixed)
 free_x = np.array([0., 1., 0.]) # translational
 free_r = np.array([0., 0., 1.]) # rotational
 body.setConstraints(free_x=free_x, free_r=free_r)
@@ -240,14 +244,12 @@ initialConditions = {'pressure': P_IC(),
 #                                |_|
 
 
-domain.MeshOptions.use_gmsh = False
 domain.MeshOptions.genMesh = True
 domain.MeshOptions.he = he
 mesh_fileprefix = 'mesh'
 domain.MeshOptions.setOutputFiles(mesh_fileprefix)
+
 st.assembleDomain(domain)
-domain.use_gmsh = domain.MeshOptions.use_gmsh
-domain.geofile = mesh_fileprefix
 
 
 
@@ -297,19 +299,26 @@ m = myTpFlowProblem.Parameters.Models
 
 # MODEL PARAMETERS
 ind = -1
+# first model is mesh motion (if any)
 if movingDomain:
     m.moveMeshElastic.index = ind+1
     ind += 1
+# navier-stokes
 m.rans2p.index = ind+1
 ind += 1
+# volume of fluid
 m.vof.index = ind+1
 ind += 1
+# level set
 m.ncls.index = ind+1
 ind += 1
+# redistancing
 m.rdls.index = ind+1
 ind += 1
+# mass correction
 m.mcorr.index = ind+1
 ind += 1
+# added mass estimation
 if addedMass is True:
     m.addedMass.index = ind+1
     ind += 1
