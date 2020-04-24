@@ -9,27 +9,43 @@ from proteus.mbd import CouplingFSI as fsi
 import pychrono
 
 
+# general options
+# sim time
+T = 10.
+# initial step
+dt_init = 0.001
+# CFL value
+cfl = 0.5
+# mesh size
 he = 0.05
+# rate at which values are recorded
+sampleRate = 0.05  
+# for ALE formulation
 movingDomain = True
 
+# physical options
+# water density
 rho_0 = 998.2
+# water kinematic viscosity
 nu_0 = 1.004e-6
+# air density
 rho_1 = 1.205
+# air kinematic viscosity
 nu_1 = 1.5e-5
+# gravitational acceleration
 g = np.array([0., -9.81, 0.])
 
+# body options
+fixed = False
 
-# ----- CONTEXT ------ #
-
+# wave options
 water_level = 0.515
 wave_period = 0.87
 wave_height = 0.05
 wave_direction = np.array([1., 0., 0.])
 wave_type = 'Fenton'  #'Linear'
-
 # number of Fourier coefficients
 Nf = 8
-
 wave = wt.MonochromaticWaves(period=wave_period,
                              waveHeight=wave_height,
                              mwl=water_level,
@@ -86,11 +102,14 @@ caisson.translate(np.array([1*wavelength, water_level]))
 # create system
 system = fsi.ProtChSystem()
 # communicate gravity to system
-system.ChSystem.Set_G_acc(pychrono.ChVectorD(g[0], g[1], g[2]))
+# can also be set with:
+# system.ChSystem.Set_G_acc(pychrono.ChVectorD(g[0], g[1], g[2]))
+system.setGravitationalAcceleration(g)
 # set maximum time step for system
 system.setTimeStep(1e-4)
 
-system.ChSystem.SetSolverType(pychrono.ChSolver.Type_MINRES)
+solver = pychrono.ChSolverMINRES()
+system.ChSystem.SetSolver(solver)
 
 # BODY
 
@@ -102,18 +121,22 @@ body.setName(b'my_body')
 body.attachShape(caisson)
 # set 2D width (for force calculation)
 body.setWidth2D(0.29)
-# record values
-body.setRecordValues(all_values=True)
 # impose constraints
+body.ChBody.SetBodyFixed(fixed)
 free_x = np.array([0., 1., 0.]) # translational
 free_r = np.array([0., 0., 1.]) # rotational
 body.setConstraints(free_x=free_x, free_r=free_r)
 # access pychrono ChBody
-chbody = body.ChBody
 # set mass
-chbody.SetMass(14.5)
+# can also be set with:
+# body.ChBody.SetMass(14.5)
+body.setMass(14.5)
 # set inertia
-chbody.SetInertiaXX(pychrono.ChVectorD(1., 1., 0.35))
+# can also be set with:
+# body.ChBody.setInertiaXX(pychrono.ChVectorD(1., 1., 0.35))
+body.setInertiaXX(np.array([1., 1., 0.35]))
+# record values
+body.setRecordValues(all_values=True)
 
 
 #  ____                        _                   ____                _ _ _   _
@@ -235,10 +258,10 @@ domain.geofile = mesh_fileprefix
 # Numerics
 
 outputStepping = TpFlow.OutputStepping(
-    final_time=10.,
-    dt_init=0.001,
+    final_time=T,
+    dt_init=dt_init,
     # cfl=opts.cfl,
-    dt_output=0.05,
+    dt_output=sampleRate,
     nDTout=None,
     dt_fixed=None,
 )
@@ -247,7 +270,7 @@ myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(
     ns_model=None,
     ls_model=None,
     nd=domain.nd,
-    cfl=0.5,
+    cfl=cfl,
     outputStepping=outputStepping,
     structured=False,
     he=he,

@@ -5,24 +5,38 @@ import proteus.TwoPhaseFlow.TwoPhaseFlowProblem as TpFlow
 from proteus import WaveTools as wt
 
 
+# general options
+# sim time
+T = 10.
+# initial step
+dt_init = 0.001
+# CFL value
+cfl = 0.5
+# mesh size
 he = 0.05
+# rate at which values are recorded
+sampleRate = 0.05  
 
+# physical options
+# water density
 rho_0 = 998.2
+# water kinematic viscosity
 nu_0 = 1.004e-6
+# air density
 rho_1 = 1.205
+# air kinematic viscosity
 nu_1 = 1.5e-5
+# gravitational acceleration
 g = np.array([0., -9.81, 0.])
 
-
+# wave options
 water_level = 0.515
 wave_period = 0.87
 wave_height = 0.05
 wave_direction = np.array([1., 0., 0.])
 wave_type = 'Fenton'  #'Linear'
-
 # number of Fourier coefficients
 Nf = 8
-
 wave = wt.MonochromaticWaves(period=wave_period,
                              waveHeight=wave_height,
                              mwl=water_level,
@@ -165,10 +179,10 @@ domain.geofile = mesh_fileprefix
 # Numerics
 
 outputStepping = TpFlow.OutputStepping(
-    final_time=10.,
-    dt_init=0.001,
+    final_time=T,
+    dt_init=dt_init,
     # cfl=opts.cfl,
-    dt_output=0.05,
+    dt_output=sampleRate,
     nDTout=None,
     dt_fixed=None,
 )
@@ -177,7 +191,7 @@ myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(
     ns_model=None,
     ls_model=None,
     nd=domain.nd,
-    cfl=0.5,
+    cfl=cfl,
     outputStepping=outputStepping,
     structured=False,
     he=he,

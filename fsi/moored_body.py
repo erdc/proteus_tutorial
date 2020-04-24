@@ -9,25 +9,45 @@ from proteus.mbd import CouplingFSI as fsi
 import pychrono
 
 
+# general options
+# sim time
+T = 10.
+# initial step
+dt_init = 0.001
+# CFL value
+cfl = 0.5
+# mesh size
 he = 0.05
+# rate at which values are recorded
+sampleRate = 0.05  
+# for ALE formulation
 movingDomain = True
+# for added mass stabilization
 addedMass = True
 
+# physical options
+# water density
 rho_0 = 998.2
+# water kinematic viscosity
 nu_0 = 1.004e-6
+# air density
 rho_1 = 1.205
+# air kinematic viscosity
 nu_1 = 1.5e-5
+# gravitational acceleration
 g = np.array([0., -9.81, 0.])
 
+# body options
+fixed = False
+
+# wave options
 water_level = 0.515
 wave_period = 0.87
 wave_height = 0.05
 wave_direction = np.array([1., 0., 0.])
 wave_type = 'Fenton'  #'Linear'
-
 # number of Fourier coefficients
 Nf = 8
-
 wave = wt.MonochromaticWaves(period=wave_period,
                              waveHeight=wave_height,
                              mwl=water_level,
@@ -84,17 +104,21 @@ caisson.translate(np.array([1*wavelength, water_level]))
 # create system
 system = fsi.ProtChSystem()
 # communicate gravity to system
-system.ChSystem.Set_G_acc(pychrono.ChVectorD(g[0], g[1], g[2]))
+# can also be set with:
+# system.ChSystem.Set_G_acc(pychrono.ChVectorD(g[0], g[1], g[2]))
+system.setGravitationalAcceleration(g)
 # set maximum time step for system
 system.setTimeStep(1e-4)
+# set rate at which values are recorded
+system.setSampleRate(sampleRate)
 
 solver = pychrono.ChSolverMINRES()
 system.ChSystem.SetSolver(solver)
-solver.SetMaxIterations(100)
+solver.SetMaxIterations(1000)
 solver.EnableWarmStart(True)
 solver.EnableDiagonalPreconditioner(True)
 system.ChSystem.SetSolverForceTolerance(1e-10)
-system.ChSystem.SetSolverMaxIterations(100)
+system.ChSystem.SetSolverMaxIterations(1000)
 
 # BODY
 
@@ -106,24 +130,29 @@ body.setName(b'my_body')
 body.attachShape(caisson)
 # set 2D width (for force calculation)
 body.setWidth2D(0.29)
-# record values
-body.setRecordValues(all_values=True)
 # impose constraints
-free_x = np.array([1., 1., 0.]) # translational
-free_r = np.array([0., 0., 1.]) # rotational
+body.ChBody.SetBodyFixed(fixed)
+free_x = np.array([1., 1., 0.])
+free_r = np.array([0., 0., 1.])
 body.setConstraints(free_x=free_x, free_r=free_r)
 # access pychrono ChBody
-chbody = body.ChBody
 # set mass
-chbody.SetMass(14.5)
+# can also be set with:
+# chbody.SetMass(14.5)
+body.setMass(14.5)
 # set inertia
-chbody.SetInertiaXX(pychrono.ChVectorD(1., 1., 0.35))
+# can also be set with:
+# chbody.setInertiaXX(pychrono.ChVectorD(1., 1., 0.35))
+body.setInertiaXX(np.array([1., 1., 0.35]))
+# record values
+body.setRecordValues(all_values=True)
+
 
 # MOORINGS
 
 # variables
 # length
-L = 1.3 # m
+L = 1.2# m
 # submerged weight
 w = 0.0778  # kg/m
 # equivalent diameter (chain -> cylinder)
@@ -133,9 +162,10 @@ A0 = (np.pi*d**2/4)
 # density
 dens = w/A0+rho_0
 # number of elements for cable
-nb_elems =  20
+nb_elems = 20
 # Young's modulus
-E = 5.44e10
+E = (753.6e6)/50**3/A0
+# E = 5.44e10
 
 # fairleads coordinates
 fairlead_center = np.array([caisson.barycenter[0], water_level-0.045, 0.])
@@ -148,16 +178,17 @@ anchor2 = np.array([fairlead2[0]+1., 0., 0.])
 # quasi-statics for finding shape of cable
 from pycatenary.cable import MooringLine
 # create lines
+EA = E*A0
 cat1 = MooringLine(L=L,
                    w=w*9.81,
-                   EA=1e20,
+                   EA=EA,
                    anchor=anchor1,
                    fairlead=fairlead1,
                    nd=2,
                    floor=True)
 cat2 = MooringLine(L=L,
                    w=w*9.81,
-                   EA=1e20,
+                   EA=EA,
                    anchor=anchor2,
                    fairlead=fairlead2,
                    nd=2,
@@ -206,7 +237,7 @@ m1.setDragCoefficients(tangential=1.15, normal=0.213, segment_nb=0)
 # sets added mass coefficients
 m1.setAddedMassCoefficients(tangential=0.269, normal=0.865, segment_nb=0)
 # small Iyy for bending
-m1.setIyy(0., 0.)
+m1.setIyy(0., 0)
 # attach back node of cable to body
 m1.attachBackNodeToBody(body)
 # attach front node to anchor
@@ -238,7 +269,7 @@ m2.setDragCoefficients(tangential=1.15, normal=0.213, segment_nb=0)
 # sets added mass coefficients
 m2.setAddedMassCoefficients(tangential=0.269, normal=0.865, segment_nb=0)
 # small Iyy for bending
-m2.setIyy(0., 0.)
+m2.setIyy(0., 0)
 # attach back node of cable to body
 m2.attachBackNodeToBody(body)
 # attach front node to anchor
@@ -246,14 +277,14 @@ m2.attachFrontNodeToBody(body2)
 
 # SEABED
 
-## create a box
-#seabed = pychrono.ChBodyEasyBox(100., 100., 0.2, 1000, True)
-## move box
-#seabed.SetPos(pychrono.ChVectorD(0., -0.1-d*2., 0.))
-## fix boxed in space
-#seabed.SetBodyFixed(True)
-## add box to system
-#system.ChSystem.Add(seabed)
+# create a box
+seabed = pychrono.ChBodyEasyBox(100., 0.2, 1., 1000, True)
+# move box
+seabed.SetPos(pychrono.ChVectorD(0., -0.1-d*2, 0.))
+# fix boxed in space
+seabed.SetBodyFixed(True)
+# add box to system
+system.ChSystem.Add(seabed)
 
 # CONTACT MATERIAL
 
@@ -266,7 +297,7 @@ material.SetRestitution(0.2)
 material.SetAdhesion(0)
 
 # add material to objects
-#seabed.SetMaterialSurface(material)
+seabed.SetMaterialSurface(material)
 m1.setContactMaterial(material)
 m2.setContactMaterial(material)
 
@@ -391,10 +422,9 @@ domain.geofile = mesh_fileprefix
 # Numerics
 
 outputStepping = TpFlow.OutputStepping(
-    final_time=10.,
-    dt_init=0.001,
-    # cfl=opts.cfl,
-    dt_output=0.05,
+    final_time=T,
+    dt_init=dt_init,
+    dt_output=sampleRate,
     nDTout=None,
     dt_fixed=None,
 )
@@ -403,7 +433,7 @@ myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(
     ns_model=None,
     ls_model=None,
     nd=domain.nd,
-    cfl=0.5,
+    cfl=cfl,
     outputStepping=outputStepping,
     structured=False,
     he=he,
