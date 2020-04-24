@@ -327,7 +327,7 @@ if addedMass is True:
 m.rans2p.auxiliaryVariables += domain.auxiliaryVariables['twp']
 # ADD SYSTEM TO AUXILIARY VARIABLES
 m.rans2p.auxiliaryVariables += [system]
-
+m.rans2p.p.coefficients.NONCONSERVATIVE_FORM=0
 if addedMass is True:
     # passed in added_mass_p.py coefficients
     m.addedMass.auxiliaryVariables += [system.ProtChAddedMass]
