@@ -24,7 +24,7 @@ opts= Context.Options([
     ("ARTIFICIAL_VISCOSITY",3,"artificial viscosity")
     ])
 
-assert opts.ns_model==1, "use ns_model=1 (rans3pf) for this"
+#assert opts.ns_model==1, "use ns_model=1 (rans3pf) for this"
 
 # ****************** #
 # ***** GAUGES ***** #
@@ -130,10 +130,10 @@ domain = Domain.PiecewiseLinearComplexDomain(vertices=vertices,
 domain.MeshOptions.setParallelPartitioningType('node')
 domain.boundaryTags = boundaryTags
 domain.writePoly("mesh")
-domain.writePLY("mesh")
-domain.writeAsymptote("mesh")
-domain.MeshOptions.triangleOptions="VApq1.25q12feena%e" % ((he**3)/6.0,)
-
+#domain.writePLY("mesh")
+#domain.writeAsymptote("mesh")
+#domain.MeshOptions.triangleOptions="VApq1.25q12feena%e" % ((he**3)/6.0,)
+#domain.MeshOptions.genMesh=False
 # ****************************** #
 # ***** INITIAL CONDITIONS ***** #
 # ****************************** #
@@ -313,7 +313,7 @@ myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=opts.ns_model,
                                              initialConditions=initialConditions,
                                              boundaryConditions=boundaryConditions,
                                              auxVariables=auxVariables,
-                                             useSuperlu=False)
+                                             useSuperlu=True)
 #myTpFlowProblem.physical_parameters['gravity'] = [0.0,0.0,-9.8]
 myTpFlowProblem.Parameters.physical.gravity = [0., 0., -9.81] 
 myTpFlowProblem.clsvof_parameters['disc_ICs']=disc_ICs
