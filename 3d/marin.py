@@ -8,6 +8,7 @@ from proteus import (Domain, Context, Gauges,
                      MeshTools as mt)
 from proteus.Gauges import PointGauges, LineIntegralGauges, LineGauges
 from proteus.Profiling import logEvent
+from proteus.mprans import SpatialTools as st
 from subprocess import check_call
 import proteus.TwoPhaseFlow.TwoPhaseFlowProblem as TpFlow
 import math
@@ -118,7 +119,7 @@ facetFlags=[boundaryTags['bottom'],
             boundaryTags['box_right'],
             boundaryTags['box_back'],
             boundaryTags['box_left'],
-            boundaryTags['box_top']]        
+            boundaryTags['box_top']]
 vertices=[[0.0,0.0,0.0],#0
           [L[0],0.0,0.0],#1
           [L[0],L[1],0.0],#2
@@ -147,15 +148,20 @@ facetFlags=[boundaryTags['bottom'],
             boundaryTags['back'],
             boundaryTags['left'],
             boundaryTags['top']]
+volumes = [[[ii for ii in range(len(facets))]]]
 regions=[[0.5*L[0],0.5*L[1],0.5*L[2]]]
-regionFlags=[0]
-domain = Domain.PiecewiseLinearComplexDomain(vertices=vertices,
-                                             vertexFlags=vertexFlags,
-                                             facets=facets,
-                                             facetFlags=facetFlags)
-                                             #regions = regions,
-                                             #regionFlags = regionFlags,
-                                             #holes=holes)
+regionFlags=[1]
+domain = Domain.PiecewiseLinearComplexDomain()
+tank = st.CustomShape(domain=domain,
+                      vertices=vertices,
+                      vertexFlags=vertexFlags,
+                      facets=facets,
+                      facetFlags=facetFlags,
+                      regions=regions,
+                      regionFlags=regionFlags,
+                      volumes=volumes,
+                      boundaryTags=boundaryTags)
+st.assembleDomain(domain)
 domain.MeshOptions.setParallelPartitioningType('node')
 #domain.MeshOptions.use_gmsh=True
 domain.boundaryTags = boundaryTags
@@ -184,9 +190,9 @@ class clsvof_init_cond(object):
         phi_x = x[0]-waterLine_x
         phi_z = x[2]-waterLine_z
         if disc_ICs:
-            if x[0] < waterLine_x and x[2] < waterLine_z: 
+            if x[0] < waterLine_x and x[2] < waterLine_z:
                 return -1.0
-            elif x[0] > waterLine_x or x[2] > waterLine_z: 
+            elif x[0] > waterLine_x or x[2] > waterLine_z:
                 return 1.0
             else:
                 return 0.0
@@ -231,10 +237,10 @@ def vel_w_DBC(x,flag):
                          flag == boundaryTags['box_front'] or
                          flag == boundaryTags['box_back']):
         return lambda  x,t: 0.0
-    
+
 def pressure_increment_DBC(x,flag):
     if flag == boundaryTags['top'] and openTop:
-        return lambda x,t: 0.0    
+        return lambda x,t: 0.0
 
 def pressure_DBC(x,flag):
     if flag == boundaryTags['top'] and openTop:
@@ -243,7 +249,7 @@ def pressure_DBC(x,flag):
 def clsvof_DBC(x,flag):
     if openTop and flag == boundaryTags['top']:
         return lambda x,t: 1.0
-    
+
 # ADVECTIVE FLUX BOUNDARY CONDITIONS #
 def vel_u_AFBC(x,flag):
     if non_slip_BCs and (flag == boundaryTags['box_left'] or
@@ -288,7 +294,7 @@ def pressure_increment_AFBC(x,flag):
 def pressure_AFBC(x,flag):
     if not(flag == boundaryTags['top'] and openTop):
         return lambda x,t: 0.0
-    
+
 def clsvof_AFBC(x,flag):
     if openTop and flag == boundaryTags['top']:
         return None
@@ -299,7 +305,7 @@ def clsvof_AFBC(x,flag):
 def pressure_increment_DFBC(x,flag):
     if not (flag == boundaryTags['top'] and openTop):
         return lambda x,t: 0.0
-    
+
 ############################################
 # ***** Create myTwoPhaseFlowProblem ***** #
 ############################################
@@ -350,6 +356,6 @@ myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=opts.ns_model,
                                              auxVariables=auxVariables,
                                              useSuperlu=True)
 #myTpFlowProblem.physical_parameters['gravity'] = [0.0,0.0,-9.8]
-myTpFlowProblem.Parameters.physical.gravity = [0., 0., -9.81] 
+myTpFlowProblem.Parameters.physical.gravity = [0., 0., -9.81]
 myTpFlowProblem.clsvof_parameters['disc_ICs']=disc_ICs
 myTpFlowProblem.rans3p_parameters['ARTIFICIAL_VISCOSITY']=opts.ARTIFICIAL_VISCOSITY
