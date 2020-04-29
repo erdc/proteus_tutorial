@@ -119,26 +119,55 @@ facetFlags=[boundaryTags['bottom'],
             boundaryTags['box_back'],
             boundaryTags['box_left'],
             boundaryTags['box_top']]        
+vertices=[[0.0,0.0,0.0],#0
+          [L[0],0.0,0.0],#1
+          [L[0],L[1],0.0],#2
+          [0.0,L[1],0.0],#3
+          [0.0,0.0,L[2]],#4
+          [L[0],0.0,L[2]],#5
+          [L[0],L[1],L[2]],#6
+          [0.0,L[1],L[2]]]#7
+vertexFlags=[boundaryTags['left'],
+             boundaryTags['right'],
+             boundaryTags['right'],
+             boundaryTags['left'],
+             boundaryTags['left'],
+             boundaryTags['right'],
+             boundaryTags['right'],
+             boundaryTags['left']]
+facets=[[[0,1,2,3]],
+        [[0,1,5,4]],
+        [[1,2,6,5]],
+        [[2,3,7,6]],
+        [[3,0,4,7]],
+        [[4,5,6,7]]]
+facetFlags=[boundaryTags['bottom'],
+            boundaryTags['front'],
+            boundaryTags['right'],
+            boundaryTags['back'],
+            boundaryTags['left'],
+            boundaryTags['top']]
 regions=[[0.5*L[0],0.5*L[1],0.5*L[2]]]
 regionFlags=[0]
 domain = Domain.PiecewiseLinearComplexDomain(vertices=vertices,
                                              vertexFlags=vertexFlags,
                                              facets=facets,
-                                             facetFlags=facetFlags,
-                                             regions = regions,
-                                             regionFlags = regionFlags,
-                                             holes=holes)
+                                             facetFlags=facetFlags)
+                                             #regions = regions,
+                                             #regionFlags = regionFlags,
+                                             #holes=holes)
 domain.MeshOptions.setParallelPartitioningType('node')
 #domain.MeshOptions.use_gmsh=True
 domain.boundaryTags = boundaryTags
 domain.writePoly("mesh")
-domain.writeGeo("mesh",group_names=True,he_max=he)
+domain.writeGeo("mesh",he_max=he)
+#domain.writeGeo("mesh",he_max=he)
 #domain.writePLY("mesh")
 #domain.writeAsymptote("mesh")
 #domain.MeshOptions.triangleOptions="VApq1.25q12feena%e" % ((he**3)/6.0,)
 gmsh_cmd = "gmsh {0:s} -v 10 -3 -o {1:s} -format msh2".format(domain.geofile+".geo", domain.geofile+".msh")
 check_call(gmsh_cmd, shell=True)
-mt.msh2simplex("mesh",3)
+mt.msh2simplex("mesh",nd=3)
 domain.MeshOptions.genMesh=False
 # ****************************** #
 # ***** INITIAL CONDITIONS ***** #
