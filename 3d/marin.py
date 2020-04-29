@@ -8,6 +8,7 @@ from proteus import (Domain, Context, Gauges,
                      MeshTools as mt)
 from proteus.Gauges import PointGauges, LineIntegralGauges, LineGauges
 from proteus.Profiling import logEvent
+from subprocess import check_call
 import proteus.TwoPhaseFlow.TwoPhaseFlowProblem as TpFlow
 import math
 
@@ -128,12 +129,17 @@ domain = Domain.PiecewiseLinearComplexDomain(vertices=vertices,
                                              regionFlags = regionFlags,
                                              holes=holes)
 domain.MeshOptions.setParallelPartitioningType('node')
+#domain.MeshOptions.use_gmsh=True
 domain.boundaryTags = boundaryTags
 domain.writePoly("mesh")
+domain.writeGeo("mesh",group_names=True,he_max=he)
 #domain.writePLY("mesh")
 #domain.writeAsymptote("mesh")
 #domain.MeshOptions.triangleOptions="VApq1.25q12feena%e" % ((he**3)/6.0,)
-#domain.MeshOptions.genMesh=False
+gmsh_cmd = "gmsh {0:s} -v 10 -3 -o {1:s} -format msh2".format(domain.geofile+".geo", domain.geofile+".msh")
+check_call(gmsh_cmd, shell=True)
+mt.msh2simplex("mesh",3)
+domain.MeshOptions.genMesh=False
 # ****************************** #
 # ***** INITIAL CONDITIONS ***** #
 # ****************************** #
