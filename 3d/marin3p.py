@@ -10,14 +10,13 @@ from proteus.Gauges import PointGauges, LineIntegralGauges, LineGauges
 from proteus.Profiling import logEvent
 from subprocess import check_call
 import proteus.TwoPhaseFlow.TwoPhaseFlowProblem as TpFlow
-from proteus.TwoPhaseFlow.utils.Parameters import ParametersPhysical as PP
-from proteus.ctransportCoefficients import smoothedHeaviside
 import math
 
 # *************************** #
 # ***** GENERAL OPTIONS ***** #
 # *************************** #
 opts= Context.Options([
+    ('ns_model',1,"ns_model={0,1} for {rans2p,rans3p}"),
     ("final_time",7.5,"Final time for simulation"),
     ("dt_output",0.1,"Time interval to output solution"),
     ("gauges", True, "Collect data for validation"),
@@ -119,65 +118,56 @@ facetFlags=[boundaryTags['bottom'],
             boundaryTags['box_right'],
             boundaryTags['box_back'],
             boundaryTags['box_left'],
-            boundaryTags['box_top']]
-volumes=[[[fi for fi in range(len(facetFlags))]]]
-tank_only=False
-if tank_only:
-    vertices=[[0.0,0.0,0.0],#0
-              [L[0],0.0,0.0],#1
-              [L[0],L[1],0.0],#2
-              [0.0,L[1],0.0],#3
-              [0.0,0.0,L[2]],#4
-              [L[0],0.0,L[2]],#5
-              [L[0],L[1],L[2]],#6
-              [0.0,L[1],L[2]]]#7
-    vertexFlags=[boundaryTags['left'],
-                 boundaryTags['right'],
-                 boundaryTags['right'],
-                 boundaryTags['left'],
-                 boundaryTags['left'],
-                 boundaryTags['right'],
-                 boundaryTags['right'],
-                 boundaryTags['left']]
-    facets=[[[0,1,2,3]],
-            [[0,1,5,4]],
-            [[1,2,6,5]],
-            [[2,3,7,6]],
-            [[3,0,4,7]],
-            [[4,5,6,7]]]
-    facetFlags=[boundaryTags['bottom'],
-                boundaryTags['front'],
-                boundaryTags['right'],
-                boundaryTags['back'],
-                boundaryTags['left'],
-                boundaryTags['top']]
-    volumes=[[[0,1,2,3,4,5]]]
+            boundaryTags['box_top']]        
+vertices=[[0.0,0.0,0.0],#0
+          [L[0],0.0,0.0],#1
+          [L[0],L[1],0.0],#2
+          [0.0,L[1],0.0],#3
+          [0.0,0.0,L[2]],#4
+          [L[0],0.0,L[2]],#5
+          [L[0],L[1],L[2]],#6
+          [0.0,L[1],L[2]]]#7
+vertexFlags=[boundaryTags['left'],
+             boundaryTags['right'],
+             boundaryTags['right'],
+             boundaryTags['left'],
+             boundaryTags['left'],
+             boundaryTags['right'],
+             boundaryTags['right'],
+             boundaryTags['left']]
+facets=[[[0,1,2,3]],
+        [[0,1,5,4]],
+        [[1,2,6,5]],
+        [[2,3,7,6]],
+        [[3,0,4,7]],
+        [[4,5,6,7]]]
+facetFlags=[boundaryTags['bottom'],
+            boundaryTags['front'],
+            boundaryTags['right'],
+            boundaryTags['back'],
+            boundaryTags['left'],
+            boundaryTags['top']]
 regions=[[0.5*L[0],0.5*L[1],0.5*L[2]]]
 regionFlags=[0]
 domain = Domain.PiecewiseLinearComplexDomain(vertices=vertices,
                                              vertexFlags=vertexFlags,
                                              facets=facets,
-                                             facetFlags=facetFlags,
-                                             regions = regions,
-                                             regionFlags = regionFlags)
-#                                             holes=holes)
-domain.holes_ind=[]
-domain.volumes=volumes
+                                             facetFlags=facetFlags)
+                                             #regions = regions,
+                                             #regionFlags = regionFlags,
+                                             #holes=holes)
 domain.MeshOptions.setParallelPartitioningType('node')
 #domain.MeshOptions.use_gmsh=True
 domain.boundaryTags = boundaryTags
 domain.writePoly("mesh")
-from proteus import Comm
-comm = Comm.get()
-if comm.isMaster():
-    domain.writeGeo("mesh",he_max=he)
-    #domain.writeGeo("mesh",he_max=he)
-    #domain.writePLY("mesh")
-    #domain.writeAsymptote("mesh")
-    #domain.MeshOptions.triangleOptions="VApq1.25q12feena%e" % ((he**3)/6.0,)
-    gmsh_cmd = "gmsh {0:s} -v 10 -3 -o {1:s} -format msh2".format(domain.geofile+".geo", domain.geofile+".msh")
-    check_call(gmsh_cmd, shell=True)
-    mt.msh2simplex("mesh",nd=3)
+domain.writeGeo("mesh",he_max=he)
+#domain.writeGeo("mesh",he_max=he)
+#domain.writePLY("mesh")
+#domain.writeAsymptote("mesh")
+#domain.MeshOptions.triangleOptions="VApq1.25q12feena%e" % ((he**3)/6.0,)
+gmsh_cmd = "gmsh {0:s} -v 10 -3 -o {1:s} -format msh2".format(domain.geofile+".geo", domain.geofile+".msh")
+check_call(gmsh_cmd, shell=True)
+mt.msh2simplex("mesh",nd=3)
 domain.MeshOptions.genMesh=False
 # ****************************** #
 # ***** INITIAL CONDITIONS ***** #
@@ -186,53 +176,31 @@ class zero(object):
     def uOfXT(self,x,t):
         return 0.
 
-# Initial condition
-waterLine_x = 1.20
-waterLine_z = 0.55
-
-def signedDistance(x):
-    from math import sqrt
-    phi_x = x[0]-waterLine_x
-    phi_z = x[2]-waterLine_z 
-    if phi_x < 0.0:
-        if phi_z < 0.0:
-            return max(phi_x,phi_z)
+disc_ICs=True
+class clsvof_init_cond(object):
+    def uOfXT(self,x,t):
+        waterLine_x = 1.22
+        waterLine_z = 0.55
+        phi_x = x[0]-waterLine_x
+        phi_z = x[2]-waterLine_z
+        if disc_ICs:
+            if x[0] < waterLine_x and x[2] < waterLine_z: 
+                return -1.0
+            elif x[0] > waterLine_x or x[2] > waterLine_z: 
+                return 1.0
+            else:
+                return 0.0
         else:
-            return phi_z
-    else:
-        if phi_z < 0.0:
-            return phi_x
-        else:
-            return sqrt(phi_x**2 + phi_z**2)
-
-pp = PP()
-rho_1 = pp.densityA
-rho_0 = pp.densityB
-g = [0., 0., -9.81]
-class P:
-    def __init__(self,waterLevel):
-        self.waterLevel=waterLevel
-    def uOfXT(self,x,t):
-        if signedDistance(x) < 0:
-            return -(L[2] - self.waterLevel)*rho_1*g[2] - (self.waterLevel - x[2])*rho_0*g[2]
-        else:
-            return -(L[2] - self.waterLevel)*rho_1*g[2]
-
-class V:
-    def __init__(self):
-        pass
-    def uOfXT(self,x,t):
-        return 0.0
-
-class Phi:       
-    def uOfXT(self,x,t):
-        return signedDistance(x)
-
-class VOF:
-    def uOfXT(self,x,t):
-        return smoothedHeaviside(1.5*he,signedDistance(x))
-
-
+            if phi_x < 0.0:
+                if phi_z < 0.0:
+                    return max(phi_x,phi_z)
+                else:
+                    return phi_z
+            else:
+                if phi_z < 0.0:
+                    return phi_x
+                else:
+                    return math.sqrt(phi_x**2 + phi_z**2)
 
 # ******************************* #
 # ***** BOUNDARY CONDITIONS ***** #
@@ -264,16 +232,17 @@ def vel_w_DBC(x,flag):
                          flag == boundaryTags['box_back']):
         return lambda  x,t: 0.0
     
+def pressure_increment_DBC(x,flag):
+    if flag == boundaryTags['top'] and openTop:
+        return lambda x,t: 0.0    
+
 def pressure_DBC(x,flag):
     if flag == boundaryTags['top'] and openTop:
         return lambda x,t: 0.0
 
-def vof_DBC(x,flag):
+def clsvof_DBC(x,flag):
     if openTop and flag == boundaryTags['top']:
         return lambda x,t: 1.0
-
-def phi_DBC(x,flag):
-    return None
     
 # ADVECTIVE FLUX BOUNDARY CONDITIONS #
 def vel_u_AFBC(x,flag):
@@ -312,61 +281,75 @@ def vel_w_AFBC(x,flag):
     else: #slip everywhere but the box
         return lambda x,t: 0.0
 
+def pressure_increment_AFBC(x,flag):
+    if not (flag == boundaryTags['top'] and openTop):
+        return lambda x,t: 0.0
+
 def pressure_AFBC(x,flag):
     if not(flag == boundaryTags['top'] and openTop):
         return lambda x,t: 0.0
     
-def vof_AFBC(x,flag):
+def clsvof_AFBC(x,flag):
     if openTop and flag == boundaryTags['top']:
         return None
     else:
         return lambda x,t: 0.0
 
+# DIFFUSIVE FLUX BCs #
+def pressure_increment_DFBC(x,flag):
+    if not (flag == boundaryTags['top'] and openTop):
+        return lambda x,t: 0.0
     
 ############################################
 # ***** Create myTwoPhaseFlowProblem ***** #
 ############################################
 outputStepping = TpFlow.OutputStepping(opts.final_time,dt_output=opts.dt_output)
-initialConditions = {'pressure': P(waterLine_z),
+initialConditions = {'pressure': zero(),
+                     'pressure_increment': zero(),
                      'vel_u': zero(),
                      'vel_v': zero(),
                      'vel_w': zero(),
-                     'vof': VOF(),
-                     'rdls': Phi(),
-                     'ncls': Phi()}
-
+                     'clsvof': clsvof_init_cond()}
 boundaryConditions = {
     # DIRICHLET BCs #
     'pressure_DBC': pressure_DBC,
+    'pressure_increment_DBC':  pressure_increment_DBC,
     'vel_u_DBC': vel_u_DBC,
     'vel_v_DBC': vel_v_DBC,
     'vel_w_DBC': vel_w_DBC,
-    'vof_DBC':  vof_DBC,
-    'ncls_DBC': phi_DBC,
+    'clsvof_DBC': clsvof_DBC,
     # ADVECTIVE FLUX BCs #
     'pressure_AFBC': pressure_AFBC,
+    'pressure_increment_AFBC': pressure_increment_AFBC,
     'vel_u_AFBC': vel_u_AFBC,
     'vel_v_AFBC': vel_v_AFBC,
     'vel_w_AFBC': vel_w_AFBC,
-    'vof_AFBC': vof_AFBC,
+    'clsvof_AFBC': clsvof_AFBC,
     # DIFFUSIVE FLUX BCs #
+    'pressure_increment_DFBC': pressure_increment_DFBC,
     'vel_u_DFBC': lambda x, flag: lambda x,t: 0.,
     'vel_v_DFBC': lambda x, flag: lambda x,t: 0.,
     'vel_w_DFBC': lambda x, flag: lambda x,t: 0.,
-    'vof_DFBC': lambda x, flag: None}
+    'clsvof_DFBC': lambda x, flag: None}
 
-auxVariables={'vof': [point_height_gauges, height_gauges],
+auxVariables={'clsvof': [point_height_gauges, height_gauges],
               'pressure': [pressure_gauges]}
 
-myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=0,
-                                             ls_model=0,
+myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=opts.ns_model,
                                              nd=3,
                                              cfl=opts.cfl,
                                              outputStepping=outputStepping,
+                                             structured=False,
                                              he=he,
+                                             nnx=None,
+                                             nny=None,
+                                             nnz=None,
                                              domain=domain,
                                              initialConditions=initialConditions,
                                              boundaryConditions=boundaryConditions,
                                              auxVariables=auxVariables,
                                              useSuperlu=True)
-myTpFlowProblem.Parameters.physical.gravity = g
+#myTpFlowProblem.physical_parameters['gravity'] = [0.0,0.0,-9.8]
+myTpFlowProblem.Parameters.physical.gravity = [0., 0., -9.81] 
+myTpFlowProblem.clsvof_parameters['disc_ICs']=disc_ICs
+myTpFlowProblem.rans3p_parameters['ARTIFICIAL_VISCOSITY']=opts.ARTIFICIAL_VISCOSITY
