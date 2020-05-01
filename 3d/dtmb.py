@@ -70,8 +70,8 @@ def signedDistance(x):
             return sqrt(phi_x**2 + phi_z**2)
 
 pp = PP()
-rho_1 = pp.densityA
-rho_0 = pp.densityB
+rho_1 = pp.densityB
+rho_0 = pp.densityA
 g = [0., 0., -9.81]
 class P:
     def __init__(self,waterLevel):
