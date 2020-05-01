@@ -23,6 +23,7 @@ opts= Context.Options([
     ("dt_output",0.5,"Time interval to output solution"),
     ("cfl",0.9,"Desired CFL restriction"),
     ("he",0.3,"Max mesh element diameter"),
+    ("skip_gmsh",False,"Assume mesh has already been generated"),
     ])
 L = [10, 4, 2]
 x0 = [-2, -2, -1]
@@ -36,13 +37,20 @@ domain.polyfile="dtmb"
 domain.geofile="dtmb"
 from proteus import Comm
 comm = Comm.get()
-if comm.isMaster():
+if not opts.skip_gmsh and comm.isMaster():
     #domain.MeshOptions.triangleOptions="VApq1.25q12feena%e" % ((he**3)/6.0,)
     #gmsh_cmd = "gmsh {0:s} -v 10 -3 -o {1:s} -format msh2".format("boolean.geo", domain.geofile+".msh")
     gmsh_cmd = "gmsh {0:s} -v 10 -3 -o {1:s} -format msh2 -clmax {2:e}".format(domain.geofile+".geo", domain.geofile+".msh",he)
     check_call(gmsh_cmd, shell=True)
     mt.msh2simplex(domain.geofile, nd=3)
+    check_call("tetgen -Vfeen {0:s}.ele".format(domain.polyfile), shell=True)
+    check_call("mv {0:s}.1.ele {0:s}.ele".format(domain.polyfile), shell=True)
+    check_call("mv {0:s}.1.node {0:s}.node".format(domain.polyfile), shell=True)
+    check_call("mv {0:s}.1.face {0:s}.face".format(domain.polyfile), shell=True)
+    check_call("mv {0:s}.1.neigh {0:s}.neigh".format(domain.polyfile), shell=True)
+    check_call("mv {0:s}.1.edge {0:s}.edge".format(domain.polyfile), shell=True)
 domain.MeshOptions.genMesh=False
+
 # ****************************** #
 # ***** INITIAL CONDITIONS ***** #
 # ****************************** #
