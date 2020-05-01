@@ -116,7 +116,6 @@ class dIn:
 initialConditions = {'pressure':AtRest(),
                      'vel_u': AtRest(),
                      'vel_v': AtRest(),
-                     'vel_w': AtRest(),
                      'k':kIn(),
                      'dissipation':dIn()}
                      
