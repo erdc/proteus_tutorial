@@ -65,7 +65,7 @@ waterLine_z = 0.25
 def signedDistance(x):
     from math import sqrt
     phi_x = x[0]-waterLine_x
-    phi_z = x[2]-waterLine_z 
+    phi_z = x[2]-waterLine_z
     if phi_x < 0.0:
         if phi_z < 0.0:
             return max(phi_x,phi_z)
@@ -96,7 +96,7 @@ class V:
     def uOfXT(self,x,t):
         return 0.0
 
-class Phi:       
+class Phi:
     def uOfXT(self,x,t):
         return signedDistance(x)
 
@@ -118,13 +118,14 @@ initialConditions = {'pressure': P(waterLine_z),
 # ******************************* #
 non_slip_BCs=True
 openTop=True
+model_scale=24.830
 def velRamp(t):
-    return opts.speed*min(1.0,t*opts.speed/L[0])
+    return (opts.speed/model_scale)*min(1.0,t/40.0)
 
 # DIRICHLET BOUNDARY CONDITIONS #
 def vel_u_DBC(x,flag):
     if flag == boundaryTags['left']:
-        return lambda x,t: velRamp(t)
+        return lambda x,t: velRamp(t)*(1.0-initialConditions['vof'].uOfXT(x,t))
     elif flag == boundaryTags['hull']:
         return lambda x,t: 0.0
     elif flag == boundaryTags['right']:
@@ -145,7 +146,7 @@ def vel_w_DBC(x,flag):
         return lambda x,t: 0.0
     elif flag == boundaryTags['right']:
         return lambda x,t: 0.0
-    
+
 def pressure_DBC(x,flag):
     if flag == boundaryTags['right']:
         return lambda x,t: initialConditions['pressure'].uOfXT(x,t)
@@ -158,7 +159,7 @@ def phi_DBC(x,flag):
     if flag in [boundaryTags['left'], boundaryTags['right']]:
         return lambda x,t: initialConditions['ncls'].uOfXT(x,t)
 
-    
+
 # ADVECTIVE FLUX BOUNDARY CONDITIONS #
 def vel_u_AFBC(x,flag):
     if flag in [0,boundaryTags['front'],boundaryTags['back'],boundaryTags['bottom'],boundaryTags['top']]:
@@ -167,17 +168,17 @@ def vel_u_AFBC(x,flag):
 def vel_v_AFBC(x,flag):
     if flag in [0,boundaryTags['front'],boundaryTags['back'],boundaryTags['bottom'],boundaryTags['top']]:
         return lambda x,t: 0.0
-    
+
 def vel_w_AFBC(x,flag):
     if flag in [0,boundaryTags['front'],boundaryTags['back'],boundaryTags['bottom'],boundaryTags['top']]:
         return lambda x,t: 0.0
 
 def pressure_AFBC(x,flag):
     if flag  == boundaryTags['left']:
-        return lambda x,t: -velRamp(t)
+        return lambda x,t: -velRamp(t)*(1.0-initialConditions['vof'].uOfXT(x,t))
     if flag  in [0,boundaryTags['front'],boundaryTags['back'],boundaryTags['bottom'],boundaryTags['top']]:
         return lambda x,t: 0.0
-    
+
 def vof_AFBC(x,flag):
     if flag in [boundaryTags['left'],boundaryTags['right']]:
         return None
@@ -192,7 +193,7 @@ def vel_u_DFBC(x,flag):
 def vel_v_DFBC(x,flag):
     if flag in [0,boundaryTags['front'],boundaryTags['back'],boundaryTags['bottom'],boundaryTags['top']]:
         return lambda x,t: 0.0
-    
+
 def vel_w_DFBC(x,flag):
     if flag in [0,boundaryTags['front'],boundaryTags['back'],boundaryTags['bottom'],boundaryTags['top']]:
         return lambda x,t: 0.0
@@ -231,5 +232,5 @@ myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=0,
                                              domain=domain,
                                              initialConditions=initialConditions,
                                              boundaryConditions=boundaryConditions,
-                                             useSuperlu=True)
+                                             useSuperlu=False)
 myTpFlowProblem.Parameters.physical.gravity = g
