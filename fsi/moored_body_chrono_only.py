@@ -15,7 +15,11 @@ T = 10.
 # rate at which values are recorded
 sampleRate = 0.05
 # body options
-fixed = False
+fixed = True
+# seabed options
+contact = True
+# mooring options
+anchored = False
 
 # physical options
 # water density
@@ -165,25 +169,25 @@ anchor1 = np.array([fairlead1[0]-1., 0., 0.])
 anchor2 = np.array([fairlead2[0]+1., 0., 0.])
 
 # quasi-statics for finding shape of cable
-from pycatenary.cable import MooringLine
+# from pycatenary.cable import MooringLine
 # create lines
-EA = E*A0
-cat1 = MooringLine(L=L,
-                   w=w*9.81,
-                   EA=EA,
-                   anchor=anchor1,
-                   fairlead=fairlead1,
-                   nd=2,
-                   floor=True)
-cat2 = MooringLine(L=L,
-                   w=w*9.81,
-                   EA=EA,
-                   anchor=anchor2,
-                   fairlead=fairlead2,
-                   nd=2,
-                   floor=True)
-cat1.computeSolution()
-cat2.computeSolution()
+# EA = E*A0
+# cat1 = MooringLine(L=L,
+#                    w=w*9.81,
+#                    EA=EA,
+#                    anchor=anchor1,
+#                    fairlead=fairlead1,
+#                    nd=2,
+#                    floor=True)
+# cat2 = MooringLine(L=L,
+#                    w=w*9.81,
+#                    EA=EA,
+#                    anchor=anchor2,
+#                    fairlead=fairlead2,
+#                    nd=2,
+#                    floor=True)
+# cat1.computeSolution()
+# cat2.computeSolution()
 
 # ANCHOR
 
@@ -210,7 +214,9 @@ m1 = fsi.ProtChMoorings(system=system,
                         E=np.array([E]))
 m1.setName(b'mooring1')
 # send position functions from catenary to FEM cable
-m1.setNodesPositionFunction(cat1.s2xyz, cat1.ds2xyz)
+s2xyz = lambda s: np.array([fairlead1[0]-L+s, fairlead1[1], 0.])
+ds2xyz = lambda ds: np.array([1., 0., 0.])
+m1.setNodesPositionFunction(s2xyz, ds2xyz)
 # sets node positions of the cable
 m1.setNodesPosition()
 # build cable
@@ -230,7 +236,8 @@ m1.setIyy(0., 0)
 # attach back node of cable to body
 m1.attachBackNodeToBody(body)
 # attach front node to anchor
-m1.attachFrontNodeToBody(body2)
+if anchored:
+    m1.attachFrontNodeToBody(body2)
 
 # mooring line 2
 m2 = fsi.ProtChMoorings(system=system,
@@ -242,7 +249,9 @@ m2 = fsi.ProtChMoorings(system=system,
                         E=np.array([E]))
 m2.setName(b'mooring2')
 # send position functions from catenary to FEM cable
-m2.setNodesPositionFunction(cat2.s2xyz, cat2.ds2xyz)
+s2xyz = lambda s: np.array([fairlead2[0]+L-s, fairlead2[1], 0.])
+ds2xyz = lambda ds: np.array([-1., 0., 0.])
+m2.setNodesPositionFunction(s2xyz, ds2xyz)
 # sets node positions of the cable
 m2.setNodesPosition()
 # build cable
@@ -262,43 +271,46 @@ m2.setIyy(0., 0)
 # attach back node of cable to body
 m2.attachBackNodeToBody(body)
 # attach front node to anchor
-m2.attachFrontNodeToBody(body2)
+if anchored:
+    m2.attachFrontNodeToBody(body2)
 
 # SEABED
 
-# create a box
-seabed = pychrono.ChBodyEasyBox(100., 0.2, 1., 1000, True)
-# move box
-seabed.SetPos(pychrono.ChVectorD(0., -0.1-d*2, 0.))
-# fix boxed in space
-seabed.SetBodyFixed(True)
-# add box to system
-system.ChSystem.Add(seabed)
+if contact:
+    # create a box
+    seabed = pychrono.ChBodyEasyBox(100., 0.2, 1., 1000, True)
+    # move box
+    seabed.SetPos(pychrono.ChVectorD(0., -0.1-d*2, 0.))
+    # fix boxed in space
+    seabed.SetBodyFixed(True)
+    # add box to system
+    system.ChSystem.Add(seabed)
 
-# CONTACT MATERIAL
+    # CONTACT MATERIAL
 
-# define contact material for collision detection
-material = pychrono.ChMaterialSurfaceSMC()
-material.SetKn(3e6)  # normal stiffness
-material.SetGn(1.)  # normal damping coefficient
-material.SetFriction(0.3)
-material.SetRestitution(0.2)
-material.SetAdhesion(0)
+    # define contact material for collision detection
+    material = pychrono.ChMaterialSurfaceSMC()
+    material.SetKn(3e6)  # normal stiffness
+    material.SetGn(1.)  # normal damping coefficient
+    material.SetFriction(0.3)
+    material.SetRestitution(0.2)
+    material.SetAdhesion(0)
 
-# add material to objects
-seabed.SetMaterialSurface(material)
-m1.setContactMaterial(material)
-m2.setContactMaterial(material)
-
-
+    # add material to objects
+    seabed.SetMaterialSurface(material)
+    m1.setContactMaterial(material)
+    m2.setContactMaterial(material)
 
 
+
+
+# first need to initialize system
 system.calculate_init()
-
-
 
 nT = int(np.ceil(T/sampleRate))
 for ii in range(nT):
+    # calculate for one main step
     system.calculate(sampleRate)
+    # print some info
     print('n: {ii}, time: {time}'.format(ii=ii, time=system.ChSystem.GetChTime()))
     print('tension in mooring1: {tens}'.format(tens=m1.getTensionBack()))
