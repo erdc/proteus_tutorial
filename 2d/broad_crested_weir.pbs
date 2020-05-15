@@ -1,5 +1,5 @@
 #!/bin/bash
-#PBS -A MHPCC96640PDP
+#PBS -A ERDCV00898R40
 #PBS -l walltime=012:00:00
 #PBS -l select=1:ncpus=32:mpiprocs=32
 #PBS -l place=scatter:excl
@@ -10,9 +10,9 @@
 #PBS -m eba
 ##PBS -M myemail@mydomain
 #setup modules and check proteus version
-. ${MODULESHOME}/etc/modules.sh
-export MODULEPATH=${PROJECTS_HOME}/proteus/modulefiles:${MODULEPATH}
-module load proteus/1.7.0
+#. ${MODULESHOME}/etc/modules.sh
+#export MODULEPATH=${PROJECTS_HOME}/proteus/modulefiles:${MODULEPATH}
+#module load proteus/1.7.0
 which parun
 #create a working directory and copy over the inputs use
 cd $PBS_O_WORKDIR
