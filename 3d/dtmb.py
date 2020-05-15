@@ -4,7 +4,7 @@ Multiphase Flow Test
 from __future__ import division
 from past.utils import old_div
 import numpy as np
-from proteus import (Domain, Context, Gauges,
+from proteus import (Domain, Context, Gauges, LinearSolvers,
                      MeshTools as mt)
 from proteus.Gauges import PointGauges, LineIntegralGauges, LineGauges
 from proteus.Profiling import logEvent
@@ -234,3 +234,4 @@ myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=0,
                                              boundaryConditions=boundaryConditions,
                                              useSuperlu=False)
 myTpFlowProblem.Parameters.physical.gravity = g
+#myTpFlowProblem.Parameters.Models.rans2p.n.linearSmoother = LinearSolvers.NavierStokes_TwoPhasePCD
