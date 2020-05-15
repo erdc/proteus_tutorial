@@ -23,4 +23,4 @@ cp genmesh $WORKDIR/$PBS_JOBNAME.$PBS_JOBID
 #change into the work directory and run
 cd  $WORKDIR/$PBS_JOBNAME.$PBS_JOBID
 aprun -n 1 ./genmesh dtmb 0.1
-aprun -n ${BC_MPI_TASKS_ALLOC}  parun -l 5 --TwoPhaseFlow dtmb.py -C "he=0.1"
+aprun -n ${BC_MPI_TASKS_ALLOC}  parun -F -l 5 --TwoPhaseFlow dtmb.py -C "skip_gmsh=True he=0.1"
