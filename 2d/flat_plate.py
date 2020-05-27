@@ -81,6 +81,7 @@ boundaryTags = {'y-': 1,
                 'x-': 4,
 }
 
+
 # Attached to 'kappa' in auxiliary variables
 kWallTop = bc.kWall(Y=Y_, Yplus=Yplus, nu=opts.nu)
 kWallBottom = bc.kWall(Y=Y_, Yplus=Yplus, nu=opts.nu)
@@ -116,6 +117,7 @@ class dIn:
 initialConditions = {'pressure':AtRest(),
                      'vel_u': AtRest(),
                      'vel_v': AtRest(),
+                     'vel_w': AtRest(),
                      'k':kIn(),
                      'dissipation':dIn()}
                      

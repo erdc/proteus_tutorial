@@ -280,6 +280,7 @@ myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(
     he=he,
     domain=domain,
     initialConditions=initialConditions,
+    useSuperlu=True
 )
 
 # Necessary for moving domains
