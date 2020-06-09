@@ -23,8 +23,8 @@ import pytest
         
 def test_run_floating_body_serial():
     """Test restart workflow"""
-    currentPath = "../2d"
-    runCommand = "cd "+currentPath+"; parun --TwoPhaseFlow floating_body.py -l 5 -C \"final_time=0.2\" -D ../tests/serial"
+    currentPath = os.path.dirname(os.path.abspath(__file__))
+    runCommand = "cd "+currentPath+"/../2d/; parun --TwoPhaseFlow floating_body.py -l 5 -C \"final_time=0.2\" -D ../tests/serial"
     subprocess.check_call(runCommand,shell=True)
 
 def test_check_for_failure_serial():
@@ -39,8 +39,8 @@ def test_check_for_failure_serial():
         
 def test_run_floating_body_parallel():
     """Test restart workflow"""
-    currentPath = "../2d"
-    runCommand = "cd "+currentPath+"; mpiexec -np 2 parun --TwoPhaseFlow floating_body.py -l 5 -C \"final_time=0.2\" -D ../tests/parallel"
+    currentPath = os.path.dirname(os.path.abspath(__file__))
+    runCommand = "cd "+currentPath+"/../2d/; mpiexec -np 2 parun --TwoPhaseFlow floating_body.py -l 5 -C \"final_time=0.2\" -D ../tests/parallel"
     subprocess.check_call(runCommand,shell=True)
 
 def test_check_for_failure_parallel():
