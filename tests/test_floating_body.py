@@ -33,7 +33,7 @@ def test_check_for_failure_serial():
     text = log_file.read()
     if (text.find('Step failed') == -1) and (text.find('Done with garbage') != -1):
         print("Serial simulation finished without failures")
-        subprocess.check_call("rm -r serial/floating_body*",shell=True)
+        subprocess.check_call("rm "+currentPath+"/serial/floating_body*",shell=True)
     else:
         raise pytest.fail("Serial simulation did not converged")
         
@@ -49,7 +49,7 @@ def test_check_for_failure_parallel():
     text = log_file.read()
     if (text.find('Step failed') == -1) and (text.find('Done with garbage') != -1):
         print("Parallel simulation finished without failures")
-        subprocess.check_call("rm -r parallel/floating_body*",shell=True)
+        subprocess.check_call("rm "+currentPath+"/parallel/floating_body*",shell=True)
     else:
         raise pytest.fail("Parallel simulation did not converged")
     
