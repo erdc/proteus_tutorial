@@ -8,6 +8,12 @@ from proteus import WaveTools as wt
 from proteus.mbd import CouplingFSI as fsi
 import pychrono
 
+opts= Context.Options([
+    ("final_time",10.0,"Final time for simulation"),
+    ("dt_output",0.1,"Time interval to output solution"),
+    ("cfl",0.5,"Desired CFL restriction"),
+    ("he",0.05,"he relative to Length of domain in x"),
+    ])
 
 # general options
 # sim time
