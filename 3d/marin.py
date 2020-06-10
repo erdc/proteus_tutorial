@@ -176,7 +176,7 @@ if opts.use_gmsh:
         gmsh_cmd = "gmsh {0:s} -v 10 -3 -o {1:s} -format msh2".format(domain.geofile+".geo", domain.geofile+".msh")
         check_call(gmsh_cmd, shell=True)
         mt.msh2simplex("mesh",nd=3)
-domain.MeshOptions.genMesh=False
+domain.MeshOptions.genMesh=True#False
 # ****************************** #
 # ***** INITIAL CONDITIONS ***** #
 # ****************************** #
