@@ -17,7 +17,7 @@ opts= Context.Options([
 
 # general options
 # sim time
-T = 10.
+T = opts.final_time
 # initial step
 dt_init = 0.001
 # CFL value
