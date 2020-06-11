@@ -14,6 +14,7 @@ USER root
 #    ${NB_USER}
 COPY . /home/$NB_USER/proteus_tutorial
 RUN chown -R ${NB_UID} ${HOME}
+RUN chmod -R ${HOME}
 USER ${NB_USER}
 WORKDIR /home/$NB_USER/proteus_tutorial
 RUN pip install --no-cache-dir notebook==5.*
