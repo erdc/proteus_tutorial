@@ -15,7 +15,7 @@ from proteus.Gauges import PointGauges, LineIntegralGauges, LineGauges
 # ***** GENERAL OPTIONS ***** #
 # *************************** #
 opts= Context.Options([
-    ("final_time",3.0,"Final time for simulation"),
+    ("final_time",5.0,"Final time for simulation"),
     ("dt_output",0.01,"Time interval to output solution"),
     ("cfl",0.9,"Desired CFL restriction"),
     ("he",0.075,"Maximum element edge length"),

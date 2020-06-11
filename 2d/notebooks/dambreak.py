@@ -13,7 +13,7 @@ import numpy as np
 # ***** GENERAL OPTIONS ***** #
 # *************************** #
 opts= Context.Options([
-    ("final_time",0.5,"Final time for simulation"),
+    ("final_time",4.0,"Final time for simulation"),
     ("dt_output",0.1,"Time interval to output solution"),
     ("cfl",0.9,"Desired CFL restriction"),
     ("he",0.08,"he relative to Length of domain in x"),
