@@ -1,0 +1,1 @@
+mpiexec -np 1 parun --TwoPhaseFlow from_arkady.py -D test -C "tank_dim=(4.,1.,3.6) refinement=12" -D test
