@@ -144,6 +144,7 @@ tank.BC['z-'].setFreeSlip()
 #                                       air=1., water=0.,)
 
 tank.BC['sponge'].setNonMaterial()
+tank.BC['wall'].setNonMaterial()
 # Assemble domain
 domain.MeshOptions.he = he
 st.assembleDomain(domain)
