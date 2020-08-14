@@ -70,17 +70,19 @@ smoothing=opts.ecH*he
 dragAlpha = 5.*opts.omega/opts.nu_0
 
 tank.setSponge(
-#              x_n = opts.tank_sponge_x[0], 
-#              x_p = opts.tank_sponge_x[1], 
+              x_n = opts.tank_sponge_x[0], 
+              x_p = opts.tank_sponge_x[1], 
               y_n = opts.tank_sponge_y[0], 
-#              y_p = opts.tank_sponge_y[1]
+              y_p = opts.tank_sponge_y[1]
              )
 
 # set generation zone
 
 tank.setGenerationZones(
-#                        x_n=True,
+                        x_n=True,
+                        x_p=True,
                        y_n=True,
+                       y_p=True,
                        waves=current,
                        dragAlpha=dragAlpha,
                        smoothing = smoothing,
@@ -97,30 +99,41 @@ tank.setGenerationZones(
 #)
 
 # --- Boundary Conditions
-#tank.BC['z+'].setAtmosphere()
-tank.BC['z+'].setFreeSlip()
+tank.BC['z+'].setAtmosphere()
 tank.BC['z-'].setFreeSlip()
-tank.BC['y+'].setFreeSlip()
+#tank.BC['z+'].setFreeSlip()
+#tank.BC['z-'].setFreeSlip()
+#tank.BC['y+'].setFreeSlip()
 #tank.BC['y-'].setFreeSlip()
-tank.BC['x+'].setHydrostaticPressureOutletWithDepth(seaLevel=opts.outlet_level,
-                                                    rhoUp=opts.rho_1,
-                                                    rhoDown=opts.rho_0,
-                                                    g=opts.g,
-                                                    refLevel=opts.tank_dim[vert_axis],
-                                                    vert_axis=vert_axis,
-                                                    smoothing=smoothing,
-                                                    U = opts.U,
-                                                    Uwind = opts.wind_velocity)
+# tank.BC['x+'].setHydrostaticPressureOutletWithDepth(seaLevel=opts.outlet_level,
+#                                                     rhoUp=opts.rho_1,
+#                                                     rhoDown=opts.rho_0,
+#                                                     g=opts.g,
+#                                                     refLevel=opts.tank_dim[vert_axis],
+#                                                     vert_axis=vert_axis,
+#                                                     smoothing=smoothing,
+#                                                     U = opts.U,
+#                                                     Uwind = opts.wind_velocity)
 
-tank.BC['x-'].setUnsteadyTwoPhaseVelocityInlet(wave=current, 
-                                               vert_axis=vert_axis,
-                                               smoothing=smoothing,
-                                               wind_speed = opts.wind_velocity)
+# tank.BC['x-'].setUnsteadyTwoPhaseVelocityInlet(wave=current, 
+#                                                vert_axis=vert_axis,
+#                                                smoothing=smoothing,
+#                                                wind_speed = opts.wind_velocity)
 
-tank.BC['y-'].setUnsteadyTwoPhaseVelocityInlet(wave=current,
-                                               vert_axis=vert_axis,
-                                               smoothing=smoothing,
-                                               wind_speed = np.array([0.2,0.0,0.]))
+# tank.BC['y+'].setUnsteadyTwoPhaseVelocityInlet(wave=current, 
+#                                                vert_axis=vert_axis,
+#                                                smoothing=smoothing,
+#                                                wind_speed = opts.wind_velocity)
+
+# tank.BC['y-'].setUnsteadyTwoPhaseVelocityInlet(wave=current, 
+#                                                vert_axis=vert_axis,
+#                                                smoothing=smoothing,
+#                                                wind_speed = opts.wind_velocity)
+
+#tank.BC['y-'].setUnsteadyTwoPhaseVelocityInlet(wave=current,
+#                                               vert_axis=vert_axis,
+#                                               smoothing=smoothing,
+#                                               wind_speed = np.array([0.2,0.0,0.]))
 
 
 #tank.BC['y-'].setTwoPhaseVelocityInlet(U=opts.U,
@@ -134,7 +147,6 @@ tank.BC['sponge'].setNonMaterial()
 # Assemble domain
 domain.MeshOptions.he = he
 st.assembleDomain(domain)
-
 #--- Initial Conditions
 class AtRest:
     def uOfXT(self, x, t):
@@ -201,4 +213,4 @@ myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=0, #0: rans2p, 1: rans3p
 params = myTpFlowProblem.Parameters
 params.physical.gravity = opts.g
 params.physical.useRANS = 0 # Turbulence Closure Model: 0=No Model, 1=Smagorinksy, 2=Dynamic Smagorinsky, 3=K-Epsilon, 4=K-Omega
-#myTpFlowProblem.Parameters.Models.rans2p.auxiliaryVariables += domain.auxiliaryVariables['twp']
+myTpFlowProblem.Parameters.Models.rans2p.auxiliaryVariables += domain.auxiliaryVariables['twp']
