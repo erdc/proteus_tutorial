@@ -23,14 +23,12 @@ def test_check_for_failure_serial():
         raise pytest.fail("Serial simulation did not converged")
 
 
-@pytest.mark.skipif(os.getenv('TEST_PROFILE')=="proteus-conda" or os.getenv('TEST_PROFILE')=="proteus-conda-osx", reason="issue with these environments in parallel")
 def test_run_marin_parallel():
     """Test restart workflow"""
     currentPath = os.path.dirname(os.path.abspath(__file__))
     runCommand = "cd "+currentPath+"/../3d/; mpiexec -np 2 parun --TwoPhaseFlow marin.py -l 5 -C \"final_time=0.2\" -D ../tests/parallel"
     subprocess.check_call(runCommand,shell=True)
 
-@pytest.mark.skipif(os.getenv('TEST_PROFILE')=="proteus-conda" or os.getenv('TEST_PROFILE')=="proteus-conda-osx", reason="issue with these environments in parallel")
 def test_check_for_failure_parallel():
     currentPath=os.path.dirname(os.path.abspath(__file__))
     log_file=open(currentPath+"/parallel/marin.log")
