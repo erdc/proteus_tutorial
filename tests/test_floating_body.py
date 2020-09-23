@@ -35,6 +35,7 @@ def test_check_for_failure_serial():
         print("Serial simulation finished without failures")
         subprocess.check_call("rm "+currentPath+"/serial/floating_body*",shell=True)
     else:
+        subprocess.check_call("cat "+currentPath+"/serial/floating_body.log",shell=True)
         raise pytest.fail("Serial simulation did not converged")
         
 def test_run_floating_body_parallel():
