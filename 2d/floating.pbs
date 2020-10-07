@@ -1,24 +1,29 @@
 #!/bin/bash
-#PBS -A MHPCC96640PDP
+#PBS -A ERDCV00898ENQ
 #PBS -l walltime=012:00:00
-#PBS -l select=1:ncpus=32:mpiprocs=32
+#PBS -l select=1:ncpus=44:mpiprocs=44
 #PBS -l place=scatter:excl
 #PBS -q standard
 #PBS -N floating
 #PBS -j oe
 #PBS -l application=proteus
 #PBS -m eba
-##PBS -M myemail@mydomain
-#setup modules and check proteus version
-. ${MODULESHOME}/etc/modules.sh
-export MODULEPATH=${PROJECTS_HONE}/proteus/modulefiles:${MODULEPATH}
-module load proteus/1.7.0
-which parun
+#PBS -M <email>
+
+export PATH=${HOME}/proteus/onyx.gnu/bin:${PATH}
+export LD_LIBRARY_PATH=${HOME}/proteus/onyx.gnu/lib:${HOME}/proteus/onyx.gnu/lib64:${LD_LIBRARY_PATH}
+
 #create a working directory and copy over the inputs use
 cd $PBS_O_WORKDIR
 mkdir $WORKDIR/$PBS_JOBNAME.$PBS_JOBID
-cp floating.py $WORKDIR/$PBS_JOBNAME.$PBS_JOBID
+cp floating2D_chrono.py $WORKDIR/$PBS_JOBNAME.$PBS_JOBID
 cp floating.pbs $WORKDIR/$PBS_JOBNAME.$PBS_JOBID
 #change into the work directory and run
 cd  $WORKDIR/$PBS_JOBNAME.$PBS_JOBID
-aprun -n ${BC_MPI_TASKS_ALLOC}  parun -l 5 --TwoPhaseFlow floating.py -C "he=0.01"
+aprun -n ${BC_MPI_TASKS_ALLOC}  parun -l 5 --TwoPhaseFlow floating2D_chrono.py -C "he=0.1" --profile -D he_0.1
+aprun -n ${BC_MPI_TASKS_ALLOC}  parun -l 5 --TwoPhaseFlow floating2D_chrono.py -C "he=0.05" --profile -D he_0.05
+aprun -n ${BC_MPI_TASKS_ALLOC}  parun -l 5 --TwoPhaseFlow floating2D_chrono.py -C "he=0.025" --profile -D he_0.025
+aprun -n ${BC_MPI_TASKS_ALLOC}  parun -l 5 --TwoPhaseFlow floating2D_chrono.py -C "he=0.0125" --profile -D he_0.0125
+aprun -n ${BC_MPI_TASKS_ALLOC}  parun -l 5 --TwoPhaseFlow floating2D_chrono.py -C "he=0.00625" --profile -D he_0.00625
+#aprun -n 48  parun -l 5 --TwoPhaseFlow floating2D_chrono.py -C "he=0.01" --profile -D he_0.01
+#aprun -n ${BC_MPI_TASKS_ALLOC}  parun -l 5 --TwoPhaseFlow floating2D_chrono.py -C "he=0.005" --profile -D he_0.005

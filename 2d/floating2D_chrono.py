@@ -223,7 +223,8 @@ params.physical.surf_tension_coeff = opts.sigma_01
 
 # ---  index in order of
 m = params.Models
-m.rdls.p.CoefficientsOptions.epsFact=0.75
+#m.rdls.p.CoefficientsOptions.epsFact=0.75
+m.rdls.p.coefficients.epsFact=0.75
 
 m.moveMeshElastic.index=0
 m.rans2p.index = 1
@@ -246,6 +247,8 @@ flags_rigidbody = np.zeros(max_flag+1, dtype='int32')
 for key in caisson.boundaryTags_global:
     flags_rigidbody[caisson.boundaryTags_global[key]] = 1
 m.addedMass.index = 6
-m.addedMass.p.CoefficientsOptions.flags_rigidbody = flags_rigidbody
-m.addedMass.p.CoefficientsOptions.solve_rate = 0.#1000.
+#m.addedMass.p.CoefficientsOptions.flags_rigidbody = flags_rigidbody
+#m.addedMass.p.CoefficientsOptions.solve_rate = 0.#1000.
+m.addedMass.p.coefficients.flags_rigidbody = flags_rigidbody
+m.addedMass.p.coefficients.solve_rate = 0.#1000.
 m.addedMass.auxiliaryVariables += [system.ProtChAddedMass]
