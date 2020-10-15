@@ -201,15 +201,6 @@ m['ncls'].p.initialConditions['phi'] = PHI_IC()
 m['rdls'].p.initialConditions['phid'] = PHI_IC()
 m['mcorr'].p.initialConditions['phiCorr'] = zero()
 
-initialConditions = {'pressure': zero(),
-                     'pressure_increment': zero(),
-                     'vel_u': zero(),
-                     'vel_v': zero(),
-                     'vof': VF_IC(),
-                     'ncls': PHI_IC(),
-                     'rdls': PHI_IC(),
-                     'clsvof': clsvof_init_cond()}
-
 # copts=myTpFlowProblem.Parameters.Models.rans2p.p.CoefficientsOptions
 # def getPhiDBC(x, flag):
 #     if flag == boundaryTags['x-']:
