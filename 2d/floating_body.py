@@ -2,6 +2,7 @@ import numpy as np
 from proteus import Domain, Context
 from proteus.mprans import SpatialTools as st
 import proteus.TwoPhaseFlow.TwoPhaseFlowProblem as TpFlow
+import proteus.TwoPhaseFlow.utils.Parameters as Parameters
 from proteus import WaveTools as wt
 
 # dependencies for FSI
@@ -217,6 +218,9 @@ class P_IC:
                           +(rho_1 -rho_0)*(smoothedHeaviside_integral(smoothing,phi_L)
                                                 -smoothedHeaviside_integral(smoothing,phi)))
         return p
+class zero:
+    def uOfXT(self, x, t):
+        return 0.0
 class U_IC:
     def uOfXT(self, x, t):
         return 0.0
@@ -267,77 +271,56 @@ st.assembleDomain(domain)
 # |_| \_|\__,_|_| |_| |_|\___|_|  |_|\___|___/
 # Numerics
 
-outputStepping = TpFlow.OutputStepping(
-    final_time=T,
-    dt_init=dt_init,
-    # cfl=opts.cfl,
-    dt_output=sampleRate,
-    nDTout=None,
-    dt_fixed=None,
-)
+myTpFlowProblem = TpFlow.TwoPhaseFlowProblem()
 
-myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(
-    ns_model=None,
-    ls_model=None,
-    nd=domain.nd,
-    cfl=cfl,
-    outputStepping=outputStepping,
-    structured=False,
-    he=he,
-    domain=domain,
-    initialConditions=initialConditions,
-    useSuperlu=True
-)
+myTpFlowProblem.outputStepping.final_time = T
+myTpFlowProblem.outputStepping.dt_output=sampleRate
+myTpFlowProblem.outputStepping.dt_init=dt_init
+
+myTpFlowProblem.domain = domain
+
+myTpFlowProblem.SystemNumerics.cfl = cfl
 
 # Necessary for moving domains
-myTpFlowProblem.movingDomain = movingDomain
+myTpFlowProblem.SystemPhysics.movingDomain = movingDomain
 
-params = myTpFlowProblem.Parameters
+params = myTpFlowProblem.SystemPhysics
 
 # PHYSICAL PARAMETERS
-params.physical.densityA = rho_0  # water
-params.physical.densityB = rho_1  # air
-params.physical.kinematicViscosityA = nu_0  # water
-params.physical.kinematicViscosityB = nu_1  # air
-params.physical.gravity = g
-params.physical.surf_tension_coeff = 0.
+params['rho_0'] = rho_0  # water
+params['rho_1'] = rho_1 # air
+params['nu_0'] = nu_0  # water
+params['nu_1'] = nu_1  # air
+params['gravity'] = g
+params['surf_tension_coeff'] = 0.0
 
-m = myTpFlowProblem.Parameters.Models
-
-# MODEL PARAMETERS
-ind = -1
-# first model is mesh motion (if any)
-if movingDomain:
-    m.moveMeshElastic.index = ind+1
-    ind += 1
-# navier-stokes
-m.rans2p.index = ind+1
-ind += 1
-# volume of fluid
-m.vof.index = ind+1
-ind += 1
-# level set
-m.ncls.index = ind+1
-ind += 1
-# redistancing
-m.rdls.index = ind+1
-ind += 1
-# mass correction
-m.mcorr.index = ind+1
-ind += 1
+params.addModel(Parameters.ParametersModelMoveMeshElastic,'move')
+params.useDefaultModels()
 # added mass estimation
 if addedMass is True:
-    m.addedMass.index = ind+1
-    ind += 1
+    params.addModel(Parameters.ParametersModelAddedMass,'addedMass')
+
+m = myTpFlowProblem.SystemPhysics.modelDict
+
+m['move'].p.initialConditions['hx'] = zero()
+m['move'].p.initialConditions['hy'] = zero()
+m['flow'].p.initialConditions['p'] = zero()
+m['flow'].p.initialConditions['u'] = zero()
+m['flow'].p.initialConditions['v'] = zero()
+m['vof'].p.initialConditions['vof'] = VF_IC()
+m['ncls'].p.initialConditions['phi'] = PHI_IC()
+m['rdls'].p.initialConditions['phid'] = PHI_IC()
+m['mcorr'].p.initialConditions['phiCorr'] = zero()
+m['addedMass'].p.initialConditions['addedMass'] = zero()
 
 # ADD RELAXATION ZONES TO AUXILIARY VARIABLES
-m.rans2p.auxiliaryVariables += domain.auxiliaryVariables['twp']
+m['flow'].auxiliaryVariables += domain.auxiliaryVariables['twp']
 # ADD SYSTEM TO AUXILIARY VARIABLES
-m.rans2p.auxiliaryVariables += [system]
-m.rans2p.p.coefficients.NONCONSERVATIVE_FORM=0
+m['flow'].auxiliaryVariables += [system]
+m['flow'].p.coefficients.NONCONSERVATIVE_FORM=0
 if addedMass is True:
     # passed in added_mass_p.py coefficients
-    m.addedMass.auxiliaryVariables += [system.ProtChAddedMass]
+    m['addedMass'].auxiliaryVariables += [system.ProtChAddedMass]
     max_flag = 0
     max_flag = max(domain.vertexFlags)
     max_flag = max(domain.segmentFlags+[max_flag])
@@ -347,4 +330,4 @@ if addedMass is True:
         if type(s) is fsi.ProtChBody:
             for i in s.boundaryFlags:
                 flags_rigidbody[i] = 1
-    m.addedMass.p.coefficients.flags_rigidbody = flags_rigidbody
+    m['addedMass'].p.coefficients.flags_rigidbody = flags_rigidbody
