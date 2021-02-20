@@ -101,10 +101,10 @@ myTpFlowProblem.outputStepping.dt_init=0.0001
 myTpFlowProblem.domain = domain
 
 myTpFlowProblem.SystemNumerics.cfl = opts.cfl
+myTpFlowProblem.SystemNumerics.useSuperlu=False
 
 myTpFlowProblem.SystemPhysics.setDefaults()
 myTpFlowProblem.SystemPhysics.useDefaultModels()
-
 m = myTpFlowProblem.SystemPhysics.modelDict 
 
 m['flow'].p.initialConditions['p'] = zero()
