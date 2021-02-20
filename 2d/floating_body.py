@@ -280,7 +280,7 @@ myTpFlowProblem.outputStepping.dt_init=dt_init
 myTpFlowProblem.domain = domain
 
 myTpFlowProblem.SystemNumerics.cfl = cfl
-
+myTpFlowProblem.SystemNumerics.useSuperlu=False
 # Necessary for moving domains
 myTpFlowProblem.SystemPhysics.movingDomain = movingDomain
 

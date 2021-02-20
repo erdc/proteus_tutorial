@@ -161,7 +161,7 @@ myTpFlowProblem.outputStepping.dt_output=opts.dt_output
 myTpFlowProblem.domain = domain
 
 myTpFlowProblem.SystemNumerics.cfl = opts.cfl
-
+myTpFlowProblem.SystemNumerics.useSuperlu=False
 myTpFlowProblem.SystemPhysics.setDefaults()
 myTpFlowProblem.SystemPhysics.useDefaultModels()
 
