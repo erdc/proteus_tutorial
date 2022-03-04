@@ -38,7 +38,7 @@ opts = Context.Options([
     ("reflecting_BCs", False, "Use reflecting BCs for all boundaries"),
     # Problem specific options
     ("want_gauges", False, "Output for water height point gauge"),
-    ("mannings", 0., "Mannings roughness coefficient") # usually = 0
+    ("mannings", 0., "Mannings roughness coefficient"), # usually = 0
     ("still_water_depth", 0.78, "Depth of still water above floor"),
     ("solitary_amplitude", 0.4, "Amplitude of solitary wave"),
     ("solitary_position", 5., "Center position of circular dam"),
