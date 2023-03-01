@@ -13,8 +13,8 @@ import numpy as np
 # ***** GENERAL OPTIONS ***** #
 # *************************** #
 opts= Context.Options([
-    ("final_time",4.0,"Final time for simulation"),
-    ("dt_output",0.1,"Time interval to output solution"),
+    ("final_time",2.0,"Final time for simulation"),
+    ("dt_output",0.01,"Time interval to output solution"),
     ("cfl",0.9,"Desired CFL restriction"),
     ("he",0.08,"he relative to Length of domain in x"),
     ("x_tank",3.22,"extent of domain in x"),
@@ -42,7 +42,7 @@ tank = Tank2D(domain, tank_dim)
 
 # ----- BOUNDARY CONDITIONS ----- #
 tank.BC['y+'].setAtmosphere()
-tank.BC['y-'].setFreeSlip()
+tank.BC['y-'].setNoSlip()
 tank.BC['x+'].setFreeSlip()
 tank.BC['x-'].setFreeSlip()
 
@@ -93,23 +93,24 @@ domain.MeshOptions.triangleOptions = "VApq30Dena%8.8f" % ((opts.he ** 2)/2.0,)
 ############################################
 # ***** Create myTwoPhaseFlowProblem ***** #
 ############################################
-outputStepping = TpFlow.OutputStepping(opts.final_time,dt_output=opts.dt_output,dt_init=0.0001)
-initialConditions = {'pressure': zero(),
-                     'pressure_increment': zero(),
-                     'vel_u': zero(),
-                     'vel_v': zero(),
-                     'vof':  VF_IC(),
-                     'ncls': PHI_IC(),
-                     'rdls': PHI_IC()}
 
-myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=0,
-                                             ls_model=0,
-                                             nd=2,
-                                             cfl=opts.cfl,
-                                             outputStepping=outputStepping,
-                                             structured=structured,
-                                             he=opts.he,
-                                             nnx=nnx,
-                                             nny=nny,
-                                             domain=domain,
-                                             initialConditions=initialConditions)
+myTpFlowProblem = TpFlow.TwoPhaseFlowProblem()
+myTpFlowProblem.outputStepping.final_time = opts.final_time
+myTpFlowProblem.outputStepping.dt_output=opts.dt_output
+myTpFlowProblem.outputStepping.dt_init=0.0001
+myTpFlowProblem.domain = domain
+
+myTpFlowProblem.SystemNumerics.cfl = opts.cfl
+
+myTpFlowProblem.SystemPhysics.setDefaults()
+myTpFlowProblem.SystemPhysics.useDefaultModels()
+
+m = myTpFlowProblem.SystemPhysics.modelDict 
+
+m['flow'].p.initialConditions['p'] = zero()
+m['flow'].p.initialConditions['u'] = zero()
+m['flow'].p.initialConditions['v'] = zero()
+m['vof'].p.initialConditions['vof'] = VF_IC()
+m['ncls'].p.initialConditions['phi'] = PHI_IC()
+m['rdls'].p.initialConditions['phid'] = PHI_IC()
+m['mcorr'].p.initialConditions['phiCorr'] = zero()
