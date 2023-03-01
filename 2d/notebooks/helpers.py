@@ -5,9 +5,9 @@ def CreateFig(dt_output,h5,output_png,sim_name,moving_mesh=False,streamlines=Tru
     archive = open_file(h5,'r')
     dambreak=__import__(sim_name)
 #    import dambreak
-    dambreak.outputStepping.dt_output=dt_output
-    dambreak.outputStepping.nDTout=None
-    dambreak.outputStepping.setOutputStepping()
+    dambreak.myTpFlowProblem.outputStepping.dt_output=dt_output
+    dambreak.myTpFlowProblem.outputStepping.nDTout=None
+    dambreak.myTpFlowProblem.outputStepping.setOutputStepping()
     dambreak.myTpFlowProblem.initializeAll()
     import matplotlib.tri as mtri
     from matplotlib import pyplot as  plt

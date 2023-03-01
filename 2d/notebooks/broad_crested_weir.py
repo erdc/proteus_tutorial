@@ -15,7 +15,7 @@ from proteus.Gauges import PointGauges, LineIntegralGauges, LineGauges
 # ***** GENERAL OPTIONS ***** #
 # *************************** #
 opts= Context.Options([
-    ("final_time",5.0,"Final time for simulation"),
+    ("final_time",3.0,"Final time for simulation"),
     ("dt_output",0.01,"Time interval to output solution"),
     ("cfl",0.9,"Desired CFL restriction"),
     ("he",0.075,"Maximum element edge length"),
@@ -181,24 +181,26 @@ class VF_IC:
 ############################################
 # ***** Create myTwoPhaseFlowProblem ***** #
 ############################################
-outputStepping = TpFlow.OutputStepping(opts.final_time,dt_output=opts.dt_output)
-initialConditions = {'pressure': zero(),
-                     'pressure_increment': zero(),
-                     'vel_u': zero(),
-                     'vel_v': zero(),
-                     'vof': VF_IC(),
-                     'ncls': PHI_IC(),
-                     'rdls': PHI_IC(),
-                     'clsvof': clsvof_init_cond()}
+myTpFlowProblem = TpFlow.TwoPhaseFlowProblem()
+myTpFlowProblem.outputStepping.final_time = opts.final_time
+myTpFlowProblem.outputStepping.dt_output=opts.dt_output
+myTpFlowProblem.domain = domain
 
-myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=0,
-                                             ls_model=0,
-                                             nd=2,
-                                             cfl=opts.cfl,
-                                             outputStepping=outputStepping,
-                                             he=opts.he,
-                                             domain=domain,
-                                             initialConditions=initialConditions)
+myTpFlowProblem.SystemNumerics.cfl = opts.cfl
+
+myTpFlowProblem.SystemPhysics.setDefaults()
+myTpFlowProblem.SystemPhysics.useDefaultModels()
+
+m = myTpFlowProblem.SystemPhysics.modelDict 
+
+m['flow'].p.initialConditions['p'] = zero()
+m['flow'].p.initialConditions['u'] = zero()
+m['flow'].p.initialConditions['v'] = zero()
+m['vof'].p.initialConditions['vof'] = VF_IC()
+m['ncls'].p.initialConditions['phi'] = PHI_IC()
+m['rdls'].p.initialConditions['phid'] = PHI_IC()
+m['mcorr'].p.initialConditions['phiCorr'] = zero()
+
 # copts=myTpFlowProblem.Parameters.Models.rans2p.p.CoefficientsOptions
 # def getPhiDBC(x, flag):
 #     if flag == boundaryTags['x-']:
