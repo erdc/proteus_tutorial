@@ -93,23 +93,24 @@ domain.MeshOptions.triangleOptions = "VApq30Dena%8.8f" % ((opts.he ** 2)/2.0,)
 ############################################
 # ***** Create myTwoPhaseFlowProblem ***** #
 ############################################
-outputStepping = TpFlow.OutputStepping(opts.final_time,dt_output=opts.dt_output,dt_init=0.0001)
-initialConditions = {'pressure': zero(),
-                     'pressure_increment': zero(),
-                     'vel_u': zero(),
-                     'vel_v': zero(),
-                     'vof':  VF_IC(),
-                     'ncls': PHI_IC(),
-                     'rdls': PHI_IC()}
 
-myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=0,
-                                             ls_model=0,
-                                             nd=2,
-                                             cfl=opts.cfl,
-                                             outputStepping=outputStepping,
-                                             structured=structured,
-                                             he=opts.he,
-                                             nnx=nnx,
-                                             nny=nny,
-                                             domain=domain,
-                                             initialConditions=initialConditions)
+myTpFlowProblem = TpFlow.TwoPhaseFlowProblem()
+myTpFlowProblem.outputStepping.final_time = opts.final_time
+myTpFlowProblem.outputStepping.dt_output=opts.dt_output
+myTpFlowProblem.outputStepping.dt_init=0.0001
+myTpFlowProblem.domain = domain
+
+myTpFlowProblem.SystemNumerics.cfl = opts.cfl
+
+myTpFlowProblem.SystemPhysics.setDefaults()
+myTpFlowProblem.SystemPhysics.useDefaultModels()
+
+m = myTpFlowProblem.SystemPhysics.modelDict 
+
+m['flow'].p.initialConditions['p'] = zero()
+m['flow'].p.initialConditions['u'] = zero()
+m['flow'].p.initialConditions['v'] = zero()
+m['vof'].p.initialConditions['vof'] = VF_IC()
+m['ncls'].p.initialConditions['phi'] = PHI_IC()
+m['rdls'].p.initialConditions['phid'] = PHI_IC()
+m['mcorr'].p.initialConditions['phiCorr'] = zero()

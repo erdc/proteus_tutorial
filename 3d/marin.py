@@ -10,7 +10,7 @@ from proteus.Gauges import PointGauges, LineIntegralGauges, LineGauges
 from proteus.Profiling import logEvent
 from subprocess import check_call
 import proteus.TwoPhaseFlow.TwoPhaseFlowProblem as TpFlow
-from proteus.TwoPhaseFlow.utils.Parameters import ParametersPhysical as PP
+#from proteus.TwoPhaseFlow.utils.Parameters import Parameters
 from proteus.ctransportCoefficients import smoothedHeaviside
 import math
 
@@ -165,6 +165,9 @@ domain.holes_ind=[]
 domain.volumes=volumes
 domain.MeshOptions.setParallelPartitioningType('node')
 #domain.MeshOptions.use_gmsh=True
+domain.MeshOptions.he=opts.he
+domain.MeshOptions.triangleFlag=0
+domain.MeshOptions.triangleOptions='VApq1.35q12feena2.0833333333333332e-02'
 domain.boundaryTags = boundaryTags
 domain.writePoly("mesh")
 from proteus import Comm
@@ -203,9 +206,8 @@ def signedDistance(x):
         else:
             return sqrt(phi_x**2 + phi_z**2)
 
-pp = PP()
-rho_1 = pp.densityA
-rho_0 = pp.densityB
+rho_1 = 1.205
+rho_0 = 998.2
 g = [0., 0., -9.81]
 class P:
     def __init__(self,waterLevel):
@@ -320,19 +322,6 @@ def vof_AFBC(x,flag):
     else:
         return lambda x,t: 0.0
 
-    
-############################################
-# ***** Create myTwoPhaseFlowProblem ***** #
-############################################
-outputStepping = TpFlow.OutputStepping(opts.final_time,dt_output=opts.dt_output)
-initialConditions = {'pressure': P(waterLine_z),
-                     'vel_u': zero(),
-                     'vel_v': zero(),
-                     'vel_w': zero(),
-                     'vof': VOF(),
-                     'rdls': Phi(),
-                     'ncls': Phi()}
-
 boundaryConditions = {
     # DIRICHLET BCs #
     'pressure_DBC': pressure_DBC,
@@ -353,18 +342,38 @@ boundaryConditions = {
     'vel_w_DFBC': lambda x, flag: lambda x,t: 0.,
     'vof_DFBC': lambda x, flag: None}
 
+############################################
+# ***** Create myTwoPhaseFlowProblem ***** #
+############################################
+
+myTpFlowProblem = TpFlow.TwoPhaseFlowProblem()
+myTpFlowProblem.outputStepping.final_time = opts.final_time
+myTpFlowProblem.outputStepping.dt_output=opts.dt_output
+
+myTpFlowProblem.domain = domain
+
+myTpFlowProblem.SystemNumerics.cfl = opts.cfl
+myTpFlowProblem.SystemNumerics.useSuperlu = True
+
+myTpFlowProblem.SystemPhysics.setDefaults()
+myTpFlowProblem.SystemPhysics.useDefaultModels()
+
+m = myTpFlowProblem.SystemPhysics.modelDict 
+
+m['flow'].p.initialConditions['p'] = P(waterLine_z)
+m['flow'].p.initialConditions['u'] = zero()
+m['flow'].p.initialConditions['v'] = zero()
+m['flow'].p.initialConditions['w'] = zero()
+m['vof'].p.initialConditions['vof'] = VOF()
+m['ncls'].p.initialConditions['phi'] = Phi()
+m['rdls'].p.initialConditions['phid'] = Phi()
+m['mcorr'].p.initialConditions['phiCorr'] = zero()
+
 auxVariables={'vof': [point_height_gauges, height_gauges],
               'pressure': [pressure_gauges]}
 
-myTpFlowProblem = TpFlow.TwoPhaseFlowProblem(ns_model=0,
-                                             ls_model=0,
-                                             nd=3,
-                                             cfl=opts.cfl,
-                                             outputStepping=outputStepping,
-                                             he=he,
-                                             domain=domain,
-                                             initialConditions=initialConditions,
-                                             boundaryConditions=boundaryConditions,
-                                             auxVariables=auxVariables,
-                                             useSuperlu=True)
-myTpFlowProblem.Parameters.physical.gravity = g
+#m['vof'].auxiliaryVariables += auxVariables['vof']
+#m['flow'].auxiliaryVariables += auxVariables['pressure']
+
+myTpFlowProblem.SystemPhysics.boundaryConditions = boundaryConditions
+myTpFlowProblem.SystemPhysics.gravity = g
