@@ -1,7 +1,0 @@
-[       0] Initializing Proteus
-[       0] Initializing MPI
-[       0] Adding . to path for loading modules
-[       0] Loading problem-specific modules
-[       0] Importing input modules
-[       0] /home/jcollins/proteus-A/proteus/proteus/TwoPhaseFlow/utils/
-[       0] Loading so module = TwoPhaseFlow_so.py
