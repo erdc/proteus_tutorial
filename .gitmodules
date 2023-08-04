@@ -1,0 +1,3 @@
+[submodule "proteus_visualization"]
+	path = proteus_visualization
+	url = https://github.com/martinRenou/proteus_visualization

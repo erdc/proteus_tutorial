@@ -1,4 +1,5 @@
 from matplotlib import pyplot as plt
+import IPython
 plt.rcParams['figure.figsize'] = (5.0*4.0/4.0, 4.0)
 import numpy as np
 from IPython.display import set_matplotlib_formats,display
@@ -40,7 +41,8 @@ def plot_plc_domain(domain):
     import mpl_toolkits.mplot3d as a3
     import matplotlib.colors as colors
     import matplotlib.patches as mpatches
-    ax = a3.Axes3D(plt.figure())
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
     cmap = plt.get_cmap("hsv")
     fN_max = float(max(domain.facetFlags))
     verts=[]
@@ -60,3 +62,4 @@ def plot_plc_domain(domain):
     ax.set_zlim(domain.x[2],domain.L[2])
     plt.legend(handles=flags.values())
     plt.savefig("plc.pdf")
+    plt.show()
